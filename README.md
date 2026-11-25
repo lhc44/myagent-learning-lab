@@ -1,29 +1,33 @@
-# AI Agent 工程学习实验室
+# AI Agent 工程学习实验室 · V4
 
-从工具调用到企业级智能体运行时：以原理、协议、实验、评估为主线。中文原创教材，官方资料为补充；不学习界面框架，不要求 GPU。
+这是一套面向企业后台开发的中文学习主线。先用真实模型 API 学会普通对话、工具定义、工具执行和多轮执行，再学习 MCP、上下文、检索、安全和可靠性。暂不学习前端框架。
 
-## 开始学习
+## 从哪里开始
 
-**V3 实战版**：[打开学习网站](https://lhc44.github.io/myagent-learning-lab/)（需 Pages 已启用）。[页面源码](docs/index.html)。建议先在网站点击「先做一次真实 API 实验」，也可阅读 [真实 API 操作指南](labs/REAL_API.md)，再进入各课。页面已为 44 节课标注代码性质及学习方法，并提供真实 Chat Completions、Responses、Messages API 与向量检索实验。兼容接口需按供应商文档配置；不是所有模型或代理均支持所有字段。真实 API 未经在线联调，教学业务数据均为虚构。
+- [打开学习网站](https://lhc44.github.io/myagent-learning-lab/)（需 GitHub Pages 已启用）
+- [网站源码](docs/index.html) · [主线课文](docs/textbook.js)
+- [真实模型实验](labs/REAL_API.md) · [分步实验脚本](labs/step_by_step.py)
 
+主线采用 11 章、33 个连续小节。每章先解释原因，再逐步观察真实程序，最后安排完整练习和讲解；不再强制每个小知识点配一道选择题。旧版 44 节课程保留于 [选读页面](docs/reference.html)，属于补充资料，原有学习进度和笔记使用旧版独立存储键，不覆盖。新版读完标记不是技能认证。
 
-先阅读 [学习路线](ROADMAP.md) 和 [术语表](GLOSSARY.md)，再按编号完成每章。每章先理解数据流，再做实验，最后回答验收问题。Python 3.11+ 为主线，Java/Spring AI 为企业落地选修。离线实验使用模拟模型，不代表真实模型能力；在线实验需自行配置获授权的模型接口，可能收费。
+## 主线顺序
 
-| 章 | 内容 |
-|---|---|
-| 01 | [Agent 基础与模型消息](courses/01-agent.md) |
-| 02 | [Function Calling 与工具设计](courses/02-tools.md) |
-| 03 | [Agent Runtime 与执行循环](courses/03-runtime.md) |
-| 04 | [MCP 协议、客户端与服务端](courses/04-mcp.md) |
-| 05 | [Context Engineering 与记忆](courses/05-context.md) |
-| 06 | [RAG 与 Tool Search](courses/06-retrieval.md) |
-| 07 | [Agent Harness、Skills、Hooks](courses/07-harness.md) |
-| 08 | [规划、工作流、多智能体](courses/08-orchestration.md) |
-| 09 | [企业安全与生产工程](courses/09-enterprise.md) |
-| 10 | [成熟框架与 Java 落地](courses/10-frameworks.md) |
-| 11 | [Agent Evaluation](courses/11-evaluation.md) |
-| 12 | [毕业项目](courses/12-capstone.md) |
+1. 普通业务程序与智能体的区别
+2. 真实模型 API 对话
+3. 工具说明与参数规范
+4. 工具执行、结果回传与错误区分
+5. 连续工具调用与执行循环
+6. 企业身份、权限、事务与幂等
+7. MCP 标准化接入与版本差异
+8. 上下文、记忆和真实向量检索
+9. 工具检索、技能、长任务与运行支撑
+10. 生产可靠性、模型适配、状态和评估
+11. 成熟框架与 Java 企业落地
 
-[官方资料索引](references/README.md) · [实验运行指南](labs/README.md)
+## 运行说明
 
-课程目标：能解释每一次工具调用如何发生，自己实现最小运行时，并能设计可靠、可审计的企业智能体。所有示例业务数据均为虚构，不包含个人信息或真实企业凭据。
+Python 3.11+，前五章无需第三方库。先运行 `python labs/step_by_step.py local` 和 `python labs/step_by_step.py errors`，再按真实 API 指南配置环境变量。分步在线实验使用 Chat Completions；多轮实验支持三种接口格式，兼容性由实际供应商验证。所有订单数据为虚构，不执行支付或退款。
+
+本版本不声称全部高级内容已达到生产级：现代 MCP 完整联调、真实向量数据库、流式多供应商适配、Java 完整项目和生产部署仍需深化。实际模型调用可能收费，不要提交密钥。
+
+[旧版 Markdown 索引](ROADMAP.md) · [术语表](GLOSSARY.md) · [官方资料索引](references/README.md) · [本地累进项目](labs/ENTERPRISE.md)
