@@ -1,5 +1,5 @@
 """真实向量检索：使用兼容 OpenAI /embeddings 的服务，不需要向量数据库。"""
-import os,math
+import argparse, os, math
 from real_api_agent import post
 
 docs=[
@@ -7,7 +7,7 @@ docs=[
     ("P2","物流制度：发货后可以查询快递单号和运输进度。"),
     ("P3","项目管理制度：上线前必须完成测试和放行审批。"),
 ]
-question="已经付钱但还没发货，怎样申请退钱？"
+DEFAULT_QUESTION="已经付钱但还没发货，怎样申请退钱？"
 def similarity(a,b):
     if len(a)!=len(b) or not a:raise ValueError("向量维度不一致")
     denom=math.sqrt(sum(x*x for x in a))*math.sqrt(sum(y*y for y in b))
@@ -15,6 +15,12 @@ def similarity(a,b):
     return sum(x*y for x,y in zip(a,b))/denom
 
 def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("question", nargs="?", default=DEFAULT_QUESTION)
+    parser.add_argument("--expected", choices=["P1","P2","P3"], help="人为标注的期望文档，用于比较，不影响排序")
+    args=parser.parse_args()
+    question=args.question
+    expected=args.expected or ("P1" if question==DEFAULT_QUESTION else None)
     key=os.environ["AGENT_API_KEY"]
     base=os.getenv("AGENT_BASE_URL","https://api.openai.com/v1")
     model=os.environ["AGENT_EMBEDDING_MODEL"]
@@ -26,6 +32,7 @@ def main():
     q=data[0]["embedding"]
     ranked=sorted([(similarity(q,x["embedding"]),doc) for x,doc in zip(data[1:],docs)],key=lambda x:-x[0])
     for score,(id,text) in ranked:print(f"{id} 相似度={score:.4f} {text}")
-    print("预期最相关：P1；实际第一名："+ranked[0][1][0])
+    if expected:print("人工标注的期望文档："+expected)
+    print("实际第一名："+ranked[0][1][0])
     if "usage" in r:print("服务端用量：",r["usage"])
 if __name__=="__main__":main()
