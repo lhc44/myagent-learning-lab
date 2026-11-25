@@ -1,7 +1,7 @@
 window.TEXTBOOK = [
   {
     "title": "第一章：Agent 是什么，模型和程序怎样分工",
-    "intro": "本教材面向已经能独立编写业务程序、调用 API、操作数据库，但尚未开发过 AI Agent（智能体）的学习者。我们不重复 HTTP、JSON 或编程语法，从模型与业务程序如何协作开始。",
+    "intro": "先理解模型、运行程序与业务工具如何协作。熟悉传统软件开发的同学，可以直接将订单工具类比为已有的业务服务。",
     "sections": [
       [
         "1.1 为什么普通聊天模型不能替代业务系统",
@@ -28,10 +28,10 @@ window.TEXTBOOK = [
       ]
     ],
     "practice": {
-      "title": "带着三个问题开始，不重复数据库入门",
+      "title": "带着三个问题开始：模型、程序、业务分别负责什么",
       "steps": [
         "想象现有订单服务已经有查询接口。先写出哪些事实来自业务服务，哪些判断可以交给模型。",
-        "直接阅读下一章的真实调用报文；如果希望确认虚构数据源，运行下面的本地查询命令即可（选做）。"
+        "直接阅读下一章的真实调用报文；也可以先运行下面的本地查询命令，确认示例订单的数据来源。"
       ],
       "command": "python step_by_step.py local",
       "answer": "订单状态来自数据库，模型理解需求并提出查询建议，执行循环负责真正调用并回传结果。先把这三者区分清楚，后面每次增加组件都能找到它应处的位置。"
@@ -39,7 +39,7 @@ window.TEXTBOOK = [
   },
   {
     "title": "第二章：大模型如何理解任务并决定调用工具",
-    "intro": "从熟悉的 API 开发进入大模型特有的知识：推理时看到什么，为什么能生成工具调用，为什么有时会选错。不重新教授普通 HTTP 通信。",
+    "intro": "理解大模型推理时看到什么、如何生成工具调用、为什么可能选错；通过同一个真实模型的对照实验建立直觉。",
     "sections": [
       [
         "2.1 模型输入的是上下文，输出的是生成结果",
@@ -56,18 +56,18 @@ window.TEXTBOOK = [
       [
         "2.3 用一个真实的对照实验认识工具能力",
         "同一个模型，先不给它工具，然后在请求中提供工具说明，最后让它调用工具并获得真实结果。我们观察的是响应结构与实际业务结果的变化，而不是模型给自己的解释。只支持生成 JSON 的模型不一定支持原生工具调用；部分兼容服务也可能没有正确实现 tool_calls 字段。",
-        "准备你现有的 Chat Completions 兼容地址、模型名称和访问密钥即可。实验工具箱给出环境变量配置；不会要求你学习 HTTP 基础。第一次正常对话仅用于确认服务可用（可跳过），真正的重点是下一章的工具定义和真实调用。",
+        "准备你现有的 Chat Completions 兼容地址、模型名称和访问密钥即可。实验工具箱给出环境变量配置；第一次正常对话仅用于确认服务可用（可跳过），真正的重点是下一章的工具定义和真实调用。",
         "观察使用自动选择时模型是否主动查订单、普通技术问题是否直接回答、缺少编号时是否追问。强制调用工具可以用于确定性流程，但不能据此证明模型自己选得准。评估模型时要区分自动选择和强制选择。"
       ]
     ],
     "practice": {
       "title": "对照真实模型在有工具与无工具时的行为",
       "steps": [
-        "从工具箱配置你已经拥有的 API。直接运行下面两条命令，使用相同的问题。第一条不提供工具，第二条提供订单工具但在收到调用请求时停止。",
-        "观察第一条返回文本，第二条可能包含 tool_calls（工具调用列表）。若第二条没有产生调用，检查模型支持情况与工具说明；不要预先认定模型一定正确。",
-        "暂时不需要研究网络请求的写法。把两次响应中模型给出的回答或调用结构记录下来，下一章逐字段解释。"
+        "先在课程说明页配置你的 API。两条命令使用同一个程序、模型、系统指令和用户问题，第一条不提供工具，第二条提供订单工具。",
+        "观察真实响应：第一条可能返回文字，第二条可能包含 tool_calls（工具调用列表）。第二条会在收到调用请求时停止，不执行数据库查询。",
+        "把两次返回中模型的回答或调用结构记录下来。若没有产生调用，检查模型支持情况、工具说明与接口兼容性，不预先认定模型一定正确。"
       ],
-      "command": "python real_api_agent.py --no-tools \"A100 发货了吗？\"\npython step_by_step.py request \"A100 发货了吗？\"",
+      "command": "python step_by_step.py request \"A100 发货了吗？\" --no-tools\npython step_by_step.py request \"A100 发货了吗？\"",
       "answer": "在没有提供订单数据时，模型不能知道真实发货状态。提供工具后，它可能提出查询请求；但收到请求不意味着查询已经发生。若模型直接编造订单状态，应记为一次失败。"
     }
   },
@@ -112,8 +112,9 @@ window.TEXTBOOK = [
         "注意程序会在收到模型建议后停止，不查询数据库。这是故意设计的：现在要验证模型能否理解工具，而不是完成业务。",
         "选做：用同一个普通知识问题分别指定 auto 和 required，再比较响应。required 是接口施加的约束，不能当作模型自主选对的证据；兼容服务若不支持该选项，记录实际错误。"
       ],
-      "command": "python step_by_step.py schema\npython step_by_step.py request \"A100 发货了吗？\"\npython step_by_step.py request \"Java 是什么？\" --choice auto\npython step_by_step.py request \"Java 是什么？\" --choice required",
-      "answer": "如果模型提出 query_order，并给出订单编号 A100，说明它生成了符合目标的调用请求。如果没有提出调用，就查看模型回答、工具描述和模型能力。即使有 tool_calls，也只能说明模型提出了查询，还没拿到数据库结果。"
+      "command": "python step_by_step.py schema\npython step_by_step.py request \"A100 发货了吗？\"",
+      "answer": "如果模型提出 query_order，并给出订单编号 A100，说明它生成了符合目标的调用请求。如果没有提出调用，就查看模型回答、工具描述和模型能力。即使有 tool_calls，也只能说明模型提出了查询，还没拿到数据库结果。",
+      "optionalCommand": "python step_by_step.py request \"Java 是什么？\" --choice auto\npython step_by_step.py request \"Java 是什么？\" --choice required"
     },
     "workshop": [
       {
@@ -176,14 +177,6 @@ window.TEXTBOOK = [
           "第一条是模型的动作建议，第二条才包含实际业务数据。arguments 是一个 JSON 字符串，需要解析后校验；content 是工具结果序列化后的文字。",
           "去 step_by_step.py 的 finish 实验中找对应结构，确认第二次 API 请求包含前面的模型调用与工具结果。"
         ]
-      },
-      {
-        "title": "关键执行函数：真实项目中如何分开四种情况",
-        "text": "def query(store, name, raw):\n    try:\n        args = json.loads(raw)\n    except (json.JSONDecodeError, TypeError):\n        return {\"error\": \"invalid_json\"}\n    if name != \"query_order\":\n        return {\"error\": \"unknown_tool\"}\n    if not isinstance(args, dict) or set(args) != {\"order_id\"} or type(args[\"order_id\"]) is not str:\n        return {\"error\": \"invalid_arguments\"}\n    return store.execute(name, args)",
-        "explanation": [
-          "这是 step_by_step.py 的核心逻辑简化摘录，完整文件还提供中文错误说明。json.loads 解析格式；名称检查阻止未注册工具；参数检查保证订单编号符合约定；最后才查询数据库。",
-          "运行 errors 命令可以复现四种情况。格式错误、工具不存在、参数类型错误都不会访问数据库；订单不存在则确实进行了查询，返回没有记录。"
-        ]
       }
     ]
   },
@@ -224,18 +217,7 @@ window.TEXTBOOK = [
       ],
       "command": "python real_api_agent.py \"查询 A100，并根据当前制度说明能否申请退款\"\npython real_api_agent.py --no-tools \"A100 可以退款吗？\"\npython -m unittest test_real_api_agent test_step_by_step -v",
       "answer": "理想结果是模型引用真实查询到的状态和制度，说明可提交申请但需审批。程序没有执行退款。关闭工具时，模型不能声称已查询公司数据。若本地测试失败，先修复程序；本地测试成功也不代表模型每次都选得准。"
-    },
-    "workshop": [
-      {
-        "title": "先读循环的骨架，再进入真实代码",
-        "text": "for turn in range(1, max_rounds + 1):\n    response = send(path, body)\n    # 按接口格式提取 calls 和 answer\n    if not calls:\n        return answer, calls_count\n    # 检查调用预算，再执行每个工具\n    # 将每个结果按原调用编号放回 history\nraise RuntimeError(\"模型轮数达到上限\")",
-        "explanation": [
-          "这是为了阅读完整程序而提取的控制流示意，不是独立可运行代码。完整实现在 real_api_agent.py 的 run 函数，实际调用 API。",
-          "把文件中的 send、calls_count、history 与这段骨架对应起来。然后运行第五章实验，对照每一轮日志。",
-          "练习只修改 max_rounds 或 max_calls 并观察程序是否停止，注意真实模型选择不固定，不需要强行复现同一调用顺序。"
-        ]
-      }
-    ]
+    }
   },
   {
     "title": "第六章：怎样让企业业务真正安全",
@@ -263,11 +245,11 @@ window.TEXTBOOK = [
     "practice": {
       "title": "用本地工程观察权限和重复申请",
       "steps": [
-        "在完整仓库根目录执行下面的两条命令。enterprise_agent.py 是累进项目；测试文件覆盖本租户查询、跨租户隔离、工具权限、错误参数、重复申请等。",
+        "下载第六章程序（或完整实验包）并进入解压目录。enterprise_agent.py 是累进项目；测试文件覆盖本租户查询、跨租户隔离、工具权限、错误参数、重复申请等。",
         "查看 Store.submit：同一个租户与申请编号只会有一条记录。查看 Registry.call：执行前检查工具权限和参数。",
         "找出 test_tenant 和 test_pending_idempotent，分别阅读测试如何模拟另一公司订单、如何重复提交同一个申请。先不要接真实支付服务。"
       ],
-      "command": "python labs/enterprise_agent.py\npython -m unittest discover -s labs -p test_enterprise_agent.py -v",
+      "command": "python enterprise_agent.py\npython -m unittest test_enterprise_agent -v",
       "answer": "正常查询能够得到已付款状态，跨租户查询应得不到数据，重复提交只保留一条待审批申请。这个例子还没有实现企业登录、完整审批执行和外部支付，不能直接上线。"
     }
   },
@@ -302,23 +284,13 @@ window.TEXTBOOK = [
     "practice": {
       "title": "现代 MCP：从发现工具到真实模型调用",
       "steps": [
-        "在独立虚拟环境安装 Python MCP SDK 2.x，不和旧版 1.x 示例混用。下载 modern_mcp_server.py、modern_mcp_agent.py、real_api_agent.py 到同一目录。",
+        "从下载中心获取第七章程序，解压后进入同一个目录。在独立虚拟环境安装 Python MCP SDK 2.x，不和旧版 1.x 示例混用。",
         "先执行 --discover-only，无需模型密钥。查看实际协议版本是否为 2026-07-28，接着观察 MCP 工具目录、转换后的模型工具定义，以及 A100 的查询结果。",
-        "再按工具箱配置真实 Chat Completions API，运行最后一条命令。检查模型申请调用、MCP 执行结果和最终回答。接口和 SDK 联调需自己验证，若失败按实际版本、网络和错误信息排查。"
+        "按课程说明配置真实 Chat Completions API，运行最后一条命令。检查模型申请调用、MCP 执行结果和最终回答。接口和 SDK 联调需自己验证，若失败按实际版本、网络和错误信息排查。"
       ],
       "command": "python -m pip install \"mcp>=2,<3\"\npython modern_mcp_agent.py --discover-only\npython modern_mcp_agent.py \"A100 能否申请退款？\"",
       "answer": "第一个实验成功时应显示目标协议版本和工具查询结果；第二个实验应真正请求模型，并让模型的调用通过 MCP 执行。模型选择和答案由真实接口决定。当前代码依据官方 SDK 2.x 文档编写，尚未完成实际 SDK 安装和在线联调，不把预期现象称为测试结果。"
-    },
-    "workshop": [
-      {
-        "title": "最关键的转换：MCP 工具不是直接交给模型的函数对象",
-        "text": "listing = await client.list_tools()\ntools = [\n    {\"type\": \"function\", \"function\": {\n        \"name\": t.name,\n        \"description\": t.description or \"\",\n        \"parameters\": t.input_schema,\n    }}\n    for t in listing.tools if t.name in ALLOWED\n]\n# 模型申请调用后：\nresult = await client.call_tool(name, args)",
-        "explanation": [
-          "以上是 modern_mcp_agent.py 的核心代码摘录。SDK 2.x 的 input_schema 是 Python 属性，协议 JSON 中仍采用对应的线格式。",
-          "第一段转换让模型认识工具，第二段才是真正远程调用（本例通过本地子进程通信）。两段之间有一次真实模型推理，并且必须检查工具权限与参数。"
-        ]
-      }
-    ]
+    }
   },
   {
     "title": "第八章：上下文、记忆和知识检索",
@@ -347,9 +319,9 @@ window.TEXTBOOK = [
       "steps": [
         "将 real_embedding.py 与 real_api_agent.py 保存到同一目录。选择支持 /embeddings 的服务，设置 API 地址、密钥和 AGENT_EMBEDDING_MODEL（实际向量模型名称）。注意，普通聊天模型名称不一定能用于向量接口。",
         "执行脚本，查看三个制度的实际相似度及排序。预期最相关的是 P1 退款制度，这是人工标注，不是强制答案。",
-        "改动问题为『快递现在到哪里了』，观察 P2 物流制度是否排到第一位。如果排序不符合预期，就记录该例，不手动修改分数。"
+        "执行第二条命令直接传入物流问题，--expected P2 只用于显示人为标注的期望文档，不会改变排序。若结果不符合预期，就记录该例，不手动修改分数。"
       ],
-      "command": "python real_embedding.py",
+      "command": "python real_embedding.py\npython real_embedding.py \"快递现在到哪里了？\" --expected P2",
       "answer": "你应能说明：检索程序负责找候选证据，模型负责根据证据解释；相似度高不等于事实正确。真实用量和相似度以接口返回为准。"
     }
   },
@@ -412,9 +384,9 @@ window.TEXTBOOK = [
       "steps": [
         "用两个你有权限的真实接口运行同一组问题。建议查询 A100、查询 Z999、问 Java 是什么、缺少编号的订单查询、退款条件查询。",
         "分别记录实际工具、参数、业务结果和最终回答。没有真实返回的项目标记为未运行，不能填入预测结果。",
-        "运行完整仓库的本地测试，检查企业权限示例。然后写出仍未实现的部分：真实身份认证、完整审批和外部业务联调、现代 MCP、流式接口、部署和负载测试。"
+        "在完整实验包的解压目录运行全部本地测试，检查企业权限示例。然后写出仍未实现的部分：真实身份认证、完整审批和外部业务联调、现代 MCP 实际联调、流式接口、部署和负载测试。"
       ],
-      "command": "python -m unittest discover -s labs -v",
+      "command": "python -m unittest discover -v",
       "answer": "毕业前的成果应是一份真实运行记录和一个可以独立修改的智能体程序，而不是做完选择题。你应能说明更换模型时只修改哪个适配层，新增工具时怎样注册，越权为什么被拒绝，以及任务出错后如何定位。"
     }
   },
