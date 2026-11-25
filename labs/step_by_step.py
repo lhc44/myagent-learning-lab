@@ -10,7 +10,7 @@ def display(title, value):
     print("\n" + title)
     print(json.dumps(value, ensure_ascii=False, indent=2))
 
-def send(messages, tools=None):
+def send(messages, tools=None, choice=None):
     key = os.environ.get("AGENT_API_KEY")
     model = os.environ.get("AGENT_MODEL")
     base = os.environ.get("AGENT_BASE_URL", "https://api.openai.com/v1")
@@ -20,6 +20,8 @@ def send(messages, tools=None):
     body["max_tokens" if os.getenv("AGENT_CHAT_LEGACY_MAX_TOKENS")=="1" else "max_completion_tokens"] = 1024
     if tools is not None:
         body["tools"] = tools
+        if choice is not None:
+            body["tool_choice"] = choice
     display("实际请求正文（不含密钥）", body)
     result = post(base, "/chat/completions", key, "chat", body)
     display("接口真实返回（仅使用虚构业务数据）", result)
@@ -58,7 +60,8 @@ SYSTEM = "你是订单查询助手。用户问订单状态时应先查询工具�
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("stage", choices=["local","errors","schema","chat","request","finish"])
-    p.add_argument("question", nargs="?", default="请查询 A100 的付款与发货状态。")
+    p.add_argument("question", nargs="?", default=None)
+    p.add_argument("--choice", choices=["auto","none","required"], default=None, help="工具选择方式；仅 request/finish 支持，兼容接口可能不支持全部选项。")
     a = p.parse_args()
     store = OrderStore()
     try:
@@ -76,11 +79,11 @@ def main():
         elif a.stage == "schema":
             display("工具说明",TOOL)
         elif a.stage == "chat":
-            msg=send([{"role":"user","content":"请用一句中文解释什么是 API。"}])
+            msg=send([{"role":"user","content":a.question or "请用一句中文解释什么是 API。"}])
             print("模型回答：",msg.get("content"))
         else:
-            messages=[{"role":"system","content":SYSTEM},{"role":"user","content":a.question}]
-            msg=send(messages,[TOOL])
+            messages=[{"role":"system","content":SYSTEM},{"role":"user","content":a.question or "请查询 A100 的付款与发货状态。"}]
+            msg=send(messages,[TOOL],a.choice)
             calls=msg.get("tool_calls") or []
             if not calls:
                 print("模型没有申请调用工具。回答：",msg.get("content"))
