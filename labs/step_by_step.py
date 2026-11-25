@@ -62,7 +62,10 @@ def main():
     p.add_argument("stage", choices=["local","errors","schema","chat","request","finish"])
     p.add_argument("question", nargs="?", default=None)
     p.add_argument("--choice", choices=["auto","none","required"], default=None, help="工具选择方式；仅 request/finish 支持，兼容接口可能不支持全部选项。")
+    p.add_argument("--no-tools", action="store_true", help="request 阶段不提供工具，便于对照实验")
     a = p.parse_args()
+    if a.no_tools and (a.stage != "request" or a.choice is not None):
+        p.error("--no-tools 只用于 request，且不能与 --choice 一起使用")
     store = OrderStore()
     try:
         if a.stage == "local":
@@ -83,11 +86,13 @@ def main():
             print("模型回答：",msg.get("content"))
         else:
             messages=[{"role":"system","content":SYSTEM},{"role":"user","content":a.question or "请查询 A100 的付款与发货状态。"}]
-            msg=send(messages,[TOOL],a.choice)
+            msg=send(messages,None if a.no_tools else [TOOL],a.choice)
             calls=msg.get("tool_calls") or []
             if not calls:
                 print("模型没有申请调用工具。回答：",msg.get("content"))
                 return
+            if a.no_tools:
+                raise ValueError("未提供工具却收到工具调用，请检查接口兼容性")
             if a.stage=="request":
                 print("到此停止：只是收到工具调用请求，尚未执行查询。")
                 return
