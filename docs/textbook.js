@@ -109,9 +109,10 @@ window.TEXTBOOK = [
       "steps": [
         "执行第一条命令，查看完整工具定义。这一步只打印本地配置，不请求模型。",
         "执行第二条命令。观察实际返回中的 tool_calls（工具调用列表），里面可能包含 function.name 和 function.arguments。",
-        "注意程序会在收到模型建议后停止，不查询数据库。这是故意设计的：现在要验证模型能否理解工具，而不是完成业务。"
+        "注意程序会在收到模型建议后停止，不查询数据库。这是故意设计的：现在要验证模型能否理解工具，而不是完成业务。",
+        "选做：用同一个普通知识问题分别指定 auto 和 required，再比较响应。required 是接口施加的约束，不能当作模型自主选对的证据；兼容服务若不支持该选项，记录实际错误。"
       ],
-      "command": "python step_by_step.py schema\npython step_by_step.py request \"A100 发货了吗？\"",
+      "command": "python step_by_step.py schema\npython step_by_step.py request \"A100 发货了吗？\"\npython step_by_step.py request \"Java 是什么？\" --choice auto\npython step_by_step.py request \"Java 是什么？\" --choice required",
       "answer": "如果模型提出 query_order，并给出订单编号 A100，说明它生成了符合目标的调用请求。如果没有提出调用，就查看模型回答、工具描述和模型能力。即使有 tool_calls，也只能说明模型提出了查询，还没拿到数据库结果。"
     },
     "workshop": [
