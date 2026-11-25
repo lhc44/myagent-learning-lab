@@ -1,38 +1,59 @@
-# AI Agent 工程学习实验室 · V4.2
+# AI Agent 工程实验室（Agent Learning Lab）
 
-这是一套面向企业后台开发的中文学习主线。从模型如何理解任务和选择工具入手，学习真实 API 工具定义、工具执行和多轮执行，再学习 MCP、上下文、检索、安全和可靠性。暂不学习前端框架。
+这是一套专为**具备编程基础、用过大模型进行开发或调过聊天 API，但首次系统学习 AI Agent** 的工程师打造的中文实战课程。
 
-## 从哪里开始
+课程拒绝概念堆砌与黑盒框架调包，以 **“从单次 LLM API 调用，一步步亲手构建生产级 Agent Runtime”** 为主线，对齐 Anthropic *Building Effective Agents*、Yao et al. *ReAct*、OpenAI / Anthropic 原生工具调用规范、Model Context Protocol (MCP)、OWASP LLM 安全准则与 BFCL 评测方法论。
 
-- [打开学习网站](https://lhc44.github.io/myagent-learning-lab/)（需 GitHub Pages 已启用）
-- [课程说明与环境准备](https://lhc44.github.io/myagent-learning-lab/start.html) · [实验程序下载中心](https://lhc44.github.io/myagent-learning-lab/downloads.html)
-- [网站源码](docs/index.html) · [主线课文](docs/textbook.js) · [逐章源码讲解](docs/code-reading.js)
-- [真实模型实验](labs/REAL_API.md) · [分步实验脚本](labs/step_by_step.py)
+## 在线交互式学习网站
 
-主线采用 11 章、38 个连续小节。每章先解释原因，再逐步观察真实程序，最后安排完整练习和讲解；不再强制每个小知识点配一道选择题。旧版 44 节课程保留于 [选读页面](docs/reference.html)，属于补充资料，原有学习进度和笔记使用旧版独立存储键，不覆盖。新版读完标记不是技能认证。
+- **主线交互式课程站**：[https://lhc44.github.io/myagent-learning-lab/](https://lhc44.github.io/myagent-learning-lab/)（本地可直接用浏览器打开 [`docs/index.html`](docs/index.html)）
+- **快速开始与 API 配置生成器**：[`docs/start.html`](docs/start.html)
+- **分步实验源码在线预览与 ZIP 下载中心**：[`docs/downloads.html`](docs/downloads.html)
+- **权威协议对照与术语速查手册**：[`docs/reference.html`](docs/reference.html)
 
-## 主线顺序
+## 课程体系（四大阶段 · 10 章主线 + 8 组递进 Python 实验）
 
-1. 普通业务程序与智能体的区别
-2. 模型如何理解任务并决定调用工具
-3. 工具说明与参数规范
-4. 工具执行、结果回传与错误区分
-5. 连续工具调用与执行循环
-6. 企业身份、权限、事务与幂等
-7. MCP 标准化接入、现代 SDK 2.x 与真实模型桥接
-8. 上下文、记忆和真实向量检索
-9. 工具检索、技能、长任务与运行支撑
-10. 生产可靠性、模型适配、状态和评估
-11. 成熟框架与 Java 企业落地
+| 阶段 | 章节 | 核心主题 | 配套分步实验 (`labs/`) |
+| :--- | :--- | :--- | :--- |
+| **一、认知跃迁** | [第 1 章](courses/01-llm-to-agent.md) | 从 LLM API 到 Agent：Workflow 与智能体边界、三角色最小闭环 | [`lab01_llm_vs_agent.py`](labs/lab01_llm_vs_agent.py) |
+| | [第 2 章](courses/02-tool-schema.md) | Function Calling 原理、受限解码与严密的 JSON Schema 工具契约 | [`lab02_tool_schema.py`](labs/lab02_tool_schema.py) |
+| **二、核心机制** | [第 3 章](courses/03-tool-execution.md) | 单轮工具执行闭环、`tool_call_id` 配对与四层错误防御注册表 | [`lab03_tool_execution.py`](labs/lab03_tool_execution.py) |
+| | [第 4 章](courses/04-react-agent-loop.md) | 多轮 ReAct 执行循环、双重预算熔断与三大模型协议适配器 | [`lab04_agent_loop.py`](labs/lab04_agent_loop.py) |
+| **三、连接与扩展** | [第 5 章](courses/05-enterprise-safety.md) | 企业级安全边界：Principal 租户隔离、RBAC、SHA-256 幂等与 HITL 审批 | [`lab05_enterprise_safety.py`](labs/lab05_enterprise_safety.py) |
+| | [第 6 章](courses/06-mcp-protocol.md) | MCP（Model Context Protocol）架构原语与双链路协议桥接 | [`lab06_mcp_bridge.py`](labs/lab06_mcp_bridge.py) |
+| | [第 7 章](courses/07-context-and-rag.md) | 管理对话长度（成对清理防报错）与按意思查文档（RAG） | [`lab07_context_rag.py`](labs/lab07_context_rag.py) |
+| **四、落地与评估** | [第 8 章](courses/08-skills-and-orchestration.md) | 大规模工具检索、Skills 技能包、Agent Harness 与五大编排模式 | 架构演练 + Hook 切面 |
+| | [第 9 章](courses/09-evals-and-tracing.md) | Agent 工程化评估（Evals）五维矩阵与全链路追踪（Tracing） | [`lab08_eval_harness.py`](labs/lab08_eval_harness.py) |
+| | [第 10 章](courses/10-frameworks-and-production.md) | 主流框架选型（Agents SDK / LangGraph / Spring AI）与生产落地清单 | [`test_labs.py`](labs/test_labs.py) |
 
-## 运行说明
+## 30 秒本地快速体验
 
-Python 3.11+，选择 Python 是为了以较少的代码展示模型接口、工具与执行循环，智能体并不依赖特定语言。前五章无需第三方库。下载完整 ZIP 并进入解压目录；若使用 Git 克隆，请先 `cd labs`。教材的命令统一以实验目录为起点，例如 `python step_by_step.py local`。从第二章开始按课程说明配置 API。分步在线实验使用 Chat Completions；多轮实验支持三种接口格式，兼容性由实际供应商验证。所有订单数据为虚构，不执行支付或退款。
+实验代码仅依赖 **Python 3.11+ 标准库**。所有脚本默认提供**零配置离线协议演示模式**（无需 API Key 即可逐步观察完整请求/响应报文流转），同时支持通过环境变量一键切换连接真实大模型 API：
 
-本版本不声称全部高级内容已达到生产级：现代 MCP 实验已编写但未联调；真实向量数据库、流式多供应商适配、Java 完整项目和生产部署仍需深化。实际模型调用可能收费，不要提交密钥。
+```bash
+cd labs
 
-[旧版 Markdown 索引](ROADMAP.md) · [术语表](GLOSSARY.md) · [官方资料索引](references/README.md) · [本地累进项目](labs/ENTERPRISE.md)
+# 1. 运行全套自动化单元测试
+python -m unittest discover -v
 
-[现代 MCP 实验指南](labs/MODERN_MCP.md)、实际工具选择对照实验以及协议与源码逐步阅读。真实模型和 MCP SDK 均须在自己的环境中验证，不宣称线上联调已通过。
+# 2. 按步骤运行第 1 章实验（对比纯 LLM 调用 vs 传统数据库函数 vs 最小 Agent）
+python lab01_llm_vs_agent.py
 
-V4.2 新增独立下载中心、按章节 ZIP 与完整 ZIP、课程说明、真实 Python 源码逐段讲解。网站进度与笔记仍使用 V4 存储键。
+# 3. 观察三轮 ReAct 推理循环与跨厂商协议适配
+python lab04_agent_loop.py --mock
+
+# 4. 运行五维自动化评测集（对比合格基线与缺陷模型抓虫）
+python lab08_eval_harness.py
+python lab08_eval_harness.py --flawed
+```
+
+若需连接真实的 OpenAI、Anthropic Claude 或兼容大模型接口，请参考 [`labs/README.md`](labs/README.md) 或打开网页 [`docs/start.html`](docs/start.html) 生成本地终端环境变量命令。
+
+## 仓库目录结构
+
+- [`docs/`](docs/)：零构建依赖的交互式教学网站（支持亮/暗主题、分步代码演化器、可视化时序图、在线源码预览与本地学习笔记导出）
+- [`labs/`](labs/)：8 组分步递进的 Python 教学实验源码与单元测试 [`test_labs.py`](labs/test_labs.py)
+- [`courses/`](courses/)：与网站内容同步的 10 章独立 Markdown 教材讲义
+- [`ROADMAP.md`](ROADMAP.md)：分阶段学习计划与能力验收标准
+- [`GLOSSARY.md`](GLOSSARY.md)：AI Agent 工程核心术语中英对照表
+- [`references/README.md`](references/README.md)：精选一手权威论文、协议规范与官方文档索引

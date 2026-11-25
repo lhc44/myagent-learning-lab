@@ -1,67 +1,237 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>Agent Lab · 企业智能体工程</title><style>
-:root{--bg:#f5f6f8;--paper:#fff;--ink:#182431;--muted:#667382;--line:#dce2e8;--accent:#126e67;--soft:#e4f3ef;--code:#17232f;--codeink:#e5edf4}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 system-ui,"Microsoft YaHei",sans-serif}button,input{font:inherit}button{cursor:pointer}a{color:var(--accent)}.shell{display:grid;grid-template-columns:310px minmax(0,1fr);min-height:100vh}.side{height:100vh;position:sticky;top:0;overflow:auto;background:var(--paper);border-right:1px solid var(--line);padding:24px 18px}.brand{font-weight:800;font-size:23px;letter-spacing:-.6px}.sub{font-size:12px;color:var(--muted)}.bar{height:6px;border-radius:8px;background:var(--line);overflow:hidden;margin:12px 0 3px}.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}.search{margin:18px 0;width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--bg);color:var(--ink)}details{border-bottom:1px solid var(--line);padding:8px 0}summary{font-size:14px;font-weight:650;cursor:pointer;list-style:none}summary:before{content:'›';display:inline-block;margin-right:8px;color:var(--muted)}details[open] summary:before{transform:rotate(90deg)}.lesson-link{display:block;text-align:left;width:100%;border:0;background:transparent;color:var(--muted);font-size:13px;padding:7px 10px 7px 20px;border-radius:6px;line-height:1.5}.lesson-link.active{background:var(--soft);color:var(--accent);font-weight:700}.lesson-link:hover{background:var(--bg)}.main{max-width:980px;width:100%;margin:auto;padding:36px 52px 80px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--muted);font-size:13px}.tag{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-weight:700}h1{font-size:clamp(28px,4vw,42px);line-height:1.25;letter-spacing:-1px;margin:18px 0}h2{font-size:21px;margin:32px 0 12px;line-height:1.4}p{margin:0 0 16px}.goal{border-left:3px solid var(--accent);padding:14px 18px;background:var(--soft);border-radius:0 9px 9px 0}.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);padding:18px;border-radius:10px}.node{padding:7px 11px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-weight:600}.arr{color:var(--accent)}.codebox{position:relative;background:var(--code);border-radius:10px;overflow:hidden}.codehead{display:flex;justify-content:space-between;align-items:center;color:#b9c8d5;padding:9px 13px;border-bottom:1px solid #374552;font-size:12px}.codehead button{border:1px solid #526374;background:transparent;color:#e5edf4;border-radius:5px;padding:3px 10px;font-size:12px}pre{padding:18px;margin:0;overflow:auto;color:var(--codeink);font:13px/1.75 ui-monospace,Consolas,monospace;white-space:pre;tab-size:4}.panel{background:var(--paper);border:1px solid var(--line);padding:20px;border-radius:12px;margin:16px 0}.choice{display:block;text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:10px 13px;margin:8px 0;border-radius:8px;width:100%;font-size:14px}.choice.correct{border-color:var(--accent);background:var(--soft);color:var(--accent)}.choice.wrong{border-color:#b95d4e;color:#b95d4e}.feedback{font-size:14px;margin-top:12px;min-height:24px}.nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;border-top:1px solid var(--line);padding-top:22px;margin-top:36px}.btn{border:1px solid var(--line);border-radius:8px;padding:9px 16px;background:var(--paper);color:var(--ink);font-size:14px}.primary{background:var(--accent);color:white;border-color:var(--accent)}.btn:disabled{opacity:.45;cursor:default}.mobile{display:none}.intro{color:var(--muted)}.refs{font-size:13px;color:var(--muted)}.refs a{display:inline-block;margin-right:15px}.notes{width:100%;min-height:100px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:12px;font:inherit;resize:vertical}.small{font-size:12px;color:var(--muted)}@media(prefers-color-scheme:dark){:root{--bg:#131b24;--paper:#1c2632;--ink:#e0e8ef;--muted:#a3b2c1;--line:#354352;--accent:#70d4c0;--soft:#203d3e}.primary{color:#10231f}}@media(max-width:760px){.shell{display:block}.side{position:fixed;z-index:10;inset:0 auto 0 0;width:min(310px,90vw);transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 30px #0003}.side.open{transform:none}.mobile{display:inline-block}.main{padding:22px 20px 50px}.top{flex-wrap:wrap}h2{margin-top:26px}} </style></head><body><div class="shell"><aside id="side" class="side"><div class="brand">Agent Lab<span style="color:var(--accent)">.</span></div><div class="sub">旧版 V3 · 44 节选读资料</div><a href="index.html">返回新版主线教材</a><div class="bar"><i id="bar"></i></div><div id="progress" class="sub"></div><input class="search" id="search" type="search" placeholder="搜索课程、术语…"><button class="btn primary" id="apiStart" style="width:100%;margin:0 0 12px">先做一次真实 API 实验</button><nav id="menu"></nav><div class="small" style="margin-top:18px">进度和笔记保存在当前浏览器。<br><button class="btn" id="export" style="margin-top:8px">导出学习记录</button></div></aside><main class="main"><div class="top"><button class="btn mobile" id="toggle">☰ 目录</button><span id="crumb"></span><span id="position"></span></div><article id="lesson"></article><div class="nav"><button id="prev" class="btn">← 上一课</button><button id="complete" class="btn primary">标记完成</button><button id="next" class="btn">下一课 →</button></div></main></div><script src="course-part1.js"></script><script src="course-part2.js"></script><script src="solutions-part1.js"></script><script src="solutions-part2.js"></script><script src="course-advanced.js"></script><script src="learning-guide.js"></script><script src="real-lab.js"></script><script>
-(function(){
-'use strict';
-const units=[...window.COURSE_PART1,...window.COURSE_PART2,...window.COURSE_ADVANCED], lessons=units.flatMap(u=>u[2].map((l,i)=>({id:u[0]+'-'+(i+1),unit:u[0],module:u[1],data:l})));
-const solutions={...window.COURSE_SOLUTIONS_1,...window.COURSE_SOLUTIONS_2,...window.COURSE_SOLUTIONS_ADVANCED};
-const $=id=>document.getElementById(id);
-const get=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
-const store=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch{}};
-let done=new Set(get('agentlab-done-v2',[])), notes=get('agentlab-notes-v2',{}), answers=get('agentlab-answers-v2',{}), current=0;
-const refs={
-'01':[['Hugging Face Agents Course','https://huggingface.co/learn/agents-course/en/unit0/introduction']],
-'02':[['OpenAI Function Calling','https://platform.openai.com/docs/guides/function-calling']],
-'03':[['Anthropic Agent 设计模式','https://www.anthropic.com/research/building-effective-agents']],
-'04':[['MCP 2026-07-28 规范','https://modelcontextprotocol.io/specification/2026-07-28'],['MCP 2025-11-25 规范','https://modelcontextprotocol.io/specification/2025-11-25'],['Python SDK','https://github.com/modelcontextprotocol/python-sdk'],['HF MCP Course','https://huggingface.co/learn/mcp-course/en/unit0/introduction']],
-'05':[['Anthropic Engineering','https://www.anthropic.com/engineering']],
-'06':[['Hugging Face Agents Course','https://huggingface.co/learn/agents-course/en/unit0/introduction']],
-'07':[['Anthropic Engineering','https://www.anthropic.com/engineering']],
-'08':[['Building effective agents','https://www.anthropic.com/research/building-effective-agents']],
-'09':[['MCP 规范','https://modelcontextprotocol.io/specification/']],
-'10':[['Agents SDK','https://openai.github.io/openai-agents-python/'],['LangGraph','https://docs.langchain.com/oss/python/langgraph/overview'],['Spring AI','https://docs.spring.io/spring-ai/reference/']],
-'11':[['Berkeley Function Calling Leaderboard','https://gorilla.cs.berkeley.edu/leaderboard.html']],
-'12':[['Microsoft AI Agents','https://github.com/microsoft/ai-agents-for-beginners']], '13':[['Function Calling','https://platform.openai.com/docs/guides/function-calling']], '14':[['MCP official specification','https://modelcontextprotocol.io/specification/']], '15':[['LangGraph persistence','https://docs.langchain.com/oss/python/langgraph/persistence'],['Anthropic Engineering','https://www.anthropic.com/engineering']]
-};
-const el=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=text;return x};
-function updateProgress(){const count=lessons.filter(l=>done.has(l.id)).length;$('progress').textContent='已完成 '+count+' / '+lessons.length+' 节 · '+Math.round(100*count/lessons.length)+'%';$('bar').style.width=100*count/lessons.length+'%'}
-function menu(){const query=$('search').value.trim().toLowerCase(), root=$('menu');root.replaceChildren();for(const u of units){const list=lessons.filter(l=>l.unit===u[0]&&(!query||JSON.stringify(l.data).toLowerCase().includes(query)||u[1].toLowerCase().includes(query)));if(!list.length)continue;const d=el('details');d.open=!!query||lessons[current].unit===u[0];d.append(el('summary','',u[0]+' · '+u[1]+' ('+lessons.filter(l=>l.unit===u[0]&&done.has(l.id)).length+'/'+u[2].length+')'));for(const l of list){const b=el('button','lesson-link'+(l.id===lessons[current].id?' active':''),(done.has(l.id)?'✓ ':'○ ')+l.id+'  '+l.data[0]);b.onclick=()=>go(lessons.indexOf(l));d.append(b)}root.append(d)}if(!root.children.length)root.append(el('p','small','没有匹配的课程。'))}
-function section(root,title){root.append(el('h2','',title))}
-function realPanel(){
-const d=el('details','panel real-panel');d.id='realExperiment';
-d.append(el('summary','','真实 API 实验｜先把模型真正跑起来'));
-d.append(el('p','','本课程从真实模型接口入手，不需要 Gradio。模型由你自己的服务提供；业务工具实际读取本地 SQLite 数据库中的虚构订单。不会操作生产订单，不会退款。API 请求可能收费。'));
-d.append(el('h2','','第一步：准备四项信息'),el('p','','接口格式、基础地址、模型名称和 API Key（访问密钥）。先向供应商确认该模型支持工具调用。接口地址一般以 /v1 结尾，不要填完整 /chat/completions 路径。'));
-for(const s of ['chat：OpenAI Chat Completions 及兼容格式，路径 /chat/completions。','responses：OpenAI Responses 格式，路径 /responses。','messages：Claude Messages 及兼容格式，路径 /messages。'])d.append(el('p','',s));
-d.append(el('p','small','兼容服务可能只支持部分字段或不同鉴权；不要把三种请求格式混用。Gemini 原生接口暂不支持。'));
-d.append(el('h2','','第二步：保存 Python 文件'),el('p','','Python 3.11+ 即可，无需 pip 安装。把三个文件保存到同一目录，然后在终端进入该目录。密钥不要写进网页、文件、笔记或 GitHub。'));
-for(const [name,source] of [['real_api_agent.py',window.REAL_LAB.agent],['test_real_api_agent.py',window.REAL_LAB.tests],['real_embedding.py',window.REAL_LAB.embedding]]){const b=el('button','btn','保存 '+name);b.style.margin='4px';b.onclick=()=>download(source,name,'text/plain');d.append(b)}
-d.append(el('h2','','第三步：设置环境变量并运行'),el('p','','Windows PowerShell 示例。将地址和模型替换成你的真实接口信息。Read-Host -MaskInput 需要 PowerShell 7.2+；旧版 PowerShell 可用系统环境变量配置密钥。'));
-const powershell=el('div','codebox');powershell.append(el('pre','', '$env:AGENT_API_FORMAT = "chat"\n$env:AGENT_BASE_URL = "https://api.openai.com/v1"\n$env:AGENT_MODEL = "替换为你能调用的模型名称"\n$env:AGENT_API_KEY = Read-Host "输入 API Key" -MaskInput\npython real_api_agent.py'));d.append(powershell);
-const bash=el('div','codebox');bash.append(el('pre','', 'export AGENT_API_FORMAT=chat\nexport AGENT_BASE_URL=https://api.openai.com/v1\nexport AGENT_MODEL="替换为你能调用的模型名称"\nread -rs AGENT_API_KEY; export AGENT_API_KEY\npython3 real_api_agent.py'));d.append(el('p','small','macOS / Linux（Bash）'),bash);
-d.append(el('h2','','先确认接口能聊天，再加工具'),el('p','','不要一开始就调试完整 Agent。先运行下方第一条命令：只问普通知识，不给模型任何工具。若成功返回中文，说明地址、密钥、模型名称及基本接口格式已经可以工作。然后执行第二条，观察开启工具后有什么变化。'));
-const starter=el('div','codebox');starter.append(el('pre','', 'python real_api_agent.py --no-tools "请用一句话解释什么是 API"\npython real_api_agent.py "查询 A100 订单的付款和发货状态"'));d.append(starter);
-d.append(el('h2','','第四步：观察这几行日志是什么意思'));
-for(const t of ['第 1 轮请求：程序把你的问题和可用工具的说明发送给模型。','模型请求：例如 query_order，表示模型希望查订单，还没有查到结果。','程序执行结果：本地 SQLite 查询真的发生了。A100 的 paid 代表已付款，pending 代表未发货。','后续请求：模型可能读取退款制度，再根据查到的内容生成回答。','最终回答：理想情况下说明可以申请退款但需要人工审批。模型若没查制度就自行下结论，应记录为偏差。','本轮用量：usage 是服务返回的真实 Token 用量，不是教材估算的数字。'])d.append(el('p','',t));
-d.append(el('h2','','代码从哪里开始读？'));
-for(const t of [
-'1. main() 是程序入口：从环境变量读取接口地址、格式、模型和访问密钥，创建数据库，再调用 run()。这类似 Java 的 main 方法和配置加载。',
-'2. TOOLS 是模型看到的工具说明，包含名字、中文描述与参数规则。它不是执行函数。不同接口格式需要不同的外层 JSON 结构。',
-'3. post() 是真正发 HTTP POST 请求的函数。它将 Python 字典序列化为 JSON，请求供应商，再把返回的 JSON 转回字典。认证信息放请求头，不打印密钥。',
-'4. OrderStore.execute() 是业务执行入口：查工具名称、验证参数、执行带占位符的 SQLite SQL。模型只能申请查订单或读取制度，不能执行任意 SQL。',
-'5. run() 是智能体循环：每一轮先请求模型，区分文字和工具调用。模型没有再要求调用工具且给出文字时结束；否则执行工具，保存对应调用编号，把结果再次发送给模型。',
-'6. 三种格式的关键差别：Chat Completions 使用 messages、tool_calls 和 tool_call_id；Responses 使用 input、function_call 和 call_id；Claude Messages 使用 content 中的 tool_use 和 tool_result，并用 tool_use_id 关联。名称不同但业务执行是同一个函数。',
-'7. max_rounds 与 max_calls 是程序强制执行的轮次和工具次数上限。即使模型不断要求调用，程序也不会无限运行。它们不是金额硬上限，也不能替代生产的权限和超时机制。'
-])d.append(el('p','',t));
-d.append(el('h2','','第五步：试着改变问题'));
-const examples=el('div','codebox');examples.append(el('pre','', 'python real_api_agent.py "查一下不存在的 Z999 订单"\npython real_api_agent.py "Java 是什么？"\npython real_api_agent.py "查一下我的订单"\npython real_api_agent.py --no-tools "A100 付款了吗？"\npython -m unittest test_real_api_agent -v'));d.append(examples,el('p','','观察是否查询、是否澄清、是否编造事实。模型行为可能变化，实验失败也有学习价值。最后一条命令只验证程序对协议样本的处理，不请求在线模型。'));
-d.append(el('h2','','真实向量检索实验（学到 RAG 时再做）'),el('p','','选择支持 /embeddings 的服务和向量模型，使用相同的地址与密钥配置，再设置 AGENT_EMBEDDING_MODEL 为供应商提供的向量模型名称，执行 python real_embedding.py。程序会将中文问题和三份制度真的转换为向量，并显示相似度排序。P1 退款制度是人为标注的期望答案，实际排序取决于模型。'));
-d.append(el('h2','','如果请求失败怎么办'),el('p','','401：核对密钥；403：核对模型权限；404：核对地址和模型；400：核对请求格式与模型能力；429：核对余额、配额和限流。兼容 Chat 接口若仅支持 max_tokens，请按供应商文档设置 AGENT_CHAT_LEGACY_MAX_TOKENS=1。不要反复重试，也不要暴露密钥。'));
-d.append(el('p','small','本实验基于 OpenAI 与 Anthropic 官方工具调用规范编写。2026-11-25：7 项本地协议回放与参数/预算测试通过；没有使用在线付费凭据联调。不同供应商、模型、推理预算可能影响结果。代码是可执行的教学实现，不是完整生产级网关。'));const official=el('div','refs');for(const [title,url] of [['OpenAI 工具调用规范','https://developers.openai.com/api/docs/guides/function-calling'],['Claude 工具结果回传规范','https://platform.claude.com/docs/en/agents-and-tools/tool-use/handle-tool-calls'],['OpenAI 向量接口','https://developers.openai.com/api/docs/guides/embeddings']]){const a=el('a','',title);a.href=url;a.target='_blank';a.rel='noopener noreferrer';official.append(a)}d.append(official);
-return d}
-function render(){const l=lessons[current], [title,goal,paragraphs,flow,code,lab,question,opts,correct,explanation,exercise]=l.data;const root=$('lesson');root.replaceChildren();$('crumb').textContent='模块 '+l.unit+' / '+l.module;$('position').textContent='第 '+(current+1)+' / '+lessons.length+' 课';root.append(el('div','tag','Lesson '+l.id),el('h1','',title),el('div','goal','本课目标：'+goal));section(root,'01 · 核心原理');for(const p of paragraphs)root.append(el('p','',p));section(root,'02 · 数据流');const f=el('div','flow');flow.split('→').forEach((s,i)=>{if(i)f.append(el('span','arr','→'));f.append(el('span','node',s.trim()))});root.append(f);section(root,'03 · 动手实验');const guidance=window.LEARNING_GUIDE[l.id];if(guidance){const info=el('div','goal');info.append(el('div','tag',guidance[0]),el('p','',guidance[1]));root.append(info)}if(['01-1','01-2','02-3','03-1','06-2','09-2','11-1','13-1'].includes(l.id))root.append(realPanel());const cb=el('div','codebox'), ch=el('div','codehead');ch.append(el('span','','代码示例 · '+(code.trim().startsWith('{')?'JSON / 协议':code.includes('public class')?'Java':'Python')));const copy=el('button','','复制代码');copy.onclick=async()=>{try{await navigator.clipboard.writeText(code);copy.textContent='已复制'}catch{copy.textContent='请手动选择复制'}};const dl=el('button','','保存代码');dl.onclick=()=>download(code,'lesson-'+l.id+(code.includes('public class')?'.java':code.trim().startsWith('{')?'.txt':'.py'),'text/plain');const buttons=el('div');buttons.append(copy,dl);ch.append(buttons);cb.append(ch,el('pre','',code));root.append(cb,el('p','',lab));if(guidance){root.append(el('h2','','学完这一段，你应该能做到什么'),el('p','',guidance[2]))}section(root,'04 · 随堂测验');const panel=el('div','panel');panel.append(el('p','',question));const feedback=el('div','feedback');opts.forEach((o,i)=>{const b=el('button','choice',String.fromCharCode(65+i)+'. '+o);b.onclick=()=>{answers[l.id]=i;store('agentlab-answers-v2',answers);showAnswer()};panel.append(b)});panel.append(feedback);function showAnswer(){const a=answers[l.id];Array.from(panel.querySelectorAll('.choice')).forEach((b,i)=>{b.className='choice'+(a===i?(a===correct?' correct':' wrong'):'')});feedback.textContent=a===undefined?'选择一个答案，查看解析。':a===correct?'回答正确。'+explanation:'再想一想。'+explanation}showAnswer();root.append(panel);section(root,'05 · 课后实战');root.append(el('p','',exercise));const s=solutions[l.id];if(s){const d=el('details','panel');d.append(el('summary','','做完后再看：参考答案与讲解'));d.append(el('h2','','解题思路'),el('p','',s[0]),el('h2','','把思路串起来'),el('p','',s[1]));const box=el('div','codebox'), head=el('div','codehead'), copySolution=el('button','','复制参考代码');copySolution.onclick=async()=>{try{await navigator.clipboard.writeText(s[2]);copySolution.textContent='已复制'}catch{copySolution.textContent='请手动复制'}};head.append(el('span','','参考实现 / 契约示例'),copySolution);box.append(head,el('pre','',s[2]));d.append(box,el('h2','','运行后应该看到什么？为什么？'),el('p','',s[3]),el('h2','','怎样判断自己真的学会了？'),el('p','',s[4]));root.append(d)}section(root,'06 · 我的学习笔记');const n=el('textarea','notes');n.placeholder='记录你的理解、运行结果、错误与问题…';n.value=notes[l.id]||'';n.oninput=()=>{notes[l.id]=n.value;store('agentlab-notes-v2',notes)};root.append(n,el('div','small','自动保存在本浏览器；可从目录底部导出。'));const ref=el('div','refs');ref.append(el('h2','','参考来源（选读）'));for(const [name,url] of refs[l.unit]||[]){const a=el('a','',name);a.href=url;a.target='_blank';a.rel='noopener noreferrer';ref.append(a)}root.append(ref);$('prev').disabled=current===0;$('next').disabled=current===lessons.length-1;$('complete').textContent=done.has(l.id)?'✓ 已完成 · 取消标记':'标记完成';menu();updateProgress()}
-function go(i){if(i<0||i>=lessons.length)return;current=i;location.hash=lessons[i].id;render();$('side').classList.remove('open');window.scrollTo(0,0)}
-function download(content,name,type){const a=el('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
-$('apiStart').onclick=()=>{go(0);const p=$('realExperiment');if(p){p.open=true;p.scrollIntoView({behavior:'smooth'})}};$('prev').onclick=()=>go(current-1);$('next').onclick=()=>go(current+1);$('complete').onclick=()=>{const id=lessons[current].id;if(done.has(id))done.delete(id);else done.add(id);store('agentlab-done-v2',[...done]);render()};$('toggle').onclick=()=>$('side').classList.toggle('open');$('search').oninput=menu;$('export').onclick=()=>download(JSON.stringify({completed:[...done],notes,answers},null,2),'agent-lab-progress.json','application/json');function fromHash(){const i=lessons.findIndex(l=>l.id===location.hash.slice(1));if(i>=0)current=i;render()}window.addEventListener('hashchange',()=>{fromHash();window.scrollTo(0,0)});fromHash();
-})();
-</script></body></html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>权威协议与架构速查手册 · AI Agent 工程实验室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="top-links">
+      <nav>
+        <a href="index.html">← 返回主线课程</a>
+        <a href="start.html">快速开始与配置</a>
+        <a href="downloads.html">实验源码下载</a>
+      </nav>
+      <a class="btn primary" href="index.html">继续阅读教材</a>
+    </header>
+
+    <h1>AI Agent 工程权威速查手册</h1>
+    <p class="lead">汇集课程核心架构选型准则、三大主流厂商工具调用协议字段映射、MCP 核心原语、核心术语检索词典以及一手官方文档索引，供日常开发与架构评审随时查阅。</p>
+
+    <h2>一、架构选型决策阶梯：别把简单问题复杂化</h2>
+    <div class="seq-card">
+      <div class="card-title">🧭 四级复杂度递进选型指南（源自 Anthropic &amp; OpenAI 工程实践共识）</div>
+      <div class="seq-steps">
+        <div class="seq-item">
+          <div class="seq-route">Level 0 <span class="seq-arrow">→</span> 确定性业务代码</div>
+          <span class="seq-badge">无需调用 LLM</span>
+          <div class="seq-detail">输入输出规则完全固定（如按输入单号查库、固定公式算税费）。最快、零幻觉、零 Token 成本。</div>
+        </div>
+        <div class="seq-item">
+          <div class="seq-route">Level 1 <span class="seq-arrow">→</span> 单次结构化 LLM 调用</div>
+          <span class="seq-badge">1 次 API 推理</span>
+          <div class="seq-detail">摘要、翻译、分类、从工单文本提取 JSON 字段，所有输入材料在调用前已一次性备齐。</div>
+        </div>
+        <div class="seq-item">
+          <div class="seq-route">Level 2 <span class="seq-arrow">→</span> 编排工作流 (Workflow)</div>
+          <span class="seq-badge">代码掌控步骤顺序</span>
+          <div class="seq-detail">多步流程可预先穷举（如：意图分类路由 → 固定检索制度 → 生成合规回复），可预测性极高。</div>
+        </div>
+        <div class="seq-item">
+          <div class="seq-route">Level 3 <span class="seq-arrow">→</span> 自主智能体 (ReAct Agent)</div>
+          <span class="seq-badge">模型动态决定下一步</span>
+          <div class="seq-detail">下一步查什么取决于上一步查到了什么（如故障根因排查、复杂多条件售后诊断），须配双重预算熔断与 Eval。</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>二、三大主流工具调用协议报文对照表</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>核心环节</th>
+            <th>OpenAI Chat Completions</th>
+            <th>OpenAI Responses API</th>
+            <th>Anthropic Claude Messages</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>HTTP 端点</strong></td>
+            <td><code>POST /v1/chat/completions</code></td>
+            <td><code>POST /v1/responses</code></td>
+            <td><code>POST /v1/messages</code></td>
+          </tr>
+          <tr>
+            <td><strong>鉴权请求头</strong></td>
+            <td><code>Authorization: Bearer $KEY</code></td>
+            <td><code>Authorization: Bearer $KEY</code></td>
+            <td><code>x-api-key: $KEY</code> + <code>anthropic-version</code></td>
+          </tr>
+          <tr>
+            <td><strong>工具定义结构</strong></td>
+            <td><code>{"type":"function","function":{"name":...,"parameters":...}}</code></td>
+            <td><code>{"type":"function","name":...,"parameters":...,"strict":true}</code></td>
+            <td><code>{"name":...,"description":...,"input_schema":...}</code></td>
+          </tr>
+          <tr>
+            <td><strong>触发工具时的停止标志</strong></td>
+            <td><code>finish_reason == "tool_calls"</code></td>
+            <td><code>output</code> 含 <code>type == "function_call"</code></td>
+            <td><code>stop_reason == "tool_use"</code></td>
+          </tr>
+          <tr>
+            <td><strong>参数数据类型</strong></td>
+            <td>JSON 字符串（需 <code>json.loads</code>）</td>
+            <td>JSON 字符串（需 <code>json.loads</code>）</td>
+            <td>已解析好的 JSON 对象（Python <code>dict</code>）</td>
+          </tr>
+          <tr>
+            <td><strong>回传工具执行结果</strong></td>
+            <td>追加 <code>{"role":"tool","tool_call_id":id,"content":str}</code></td>
+            <td>追加 <code>{"type":"function_call_output","call_id":id,"output":str}</code></td>
+            <td>追加 <code>{"role":"user","content":[{"type":"tool_result","tool_use_id":id,...}]}</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>三、MCP 协议速查：JSON-RPC 2.0 信封格式与三大原语对照</h2>
+    <div class="bridge-grid">
+      <div class="card">
+        <div class="card-title">📨 JSON-RPC 2.0 三种核心报文信封</div>
+        <ul class="obj-list" style="font-size:14px">
+          <li><strong>Request（请求包，必含非空 <code>id</code>）</strong>：<br><code>{"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{...}}</code></li>
+          <li><strong>Response（响应包，原样回传 <code>id</code>）</strong>：<br>成功返回 <code>"result":{...}</code>；失败返回 <code>"error":{"code":-32601,"message":"..."}</code></li>
+          <li><strong>Notification（单向通知，无 <code>id</code> 字段）</strong>：<br><code>{"jsonrpc":"2.0", "method":"notifications/initialized"}</code>（发完即走不回信）</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">⚠️ Stdio vs Streamable HTTP 实战要点</div>
+        <ul class="obj-list" style="font-size:14px">
+          <li><strong>Stdio 本地子进程传输</strong>：按换行符分隔一行一个 JSON-RPC 包走 <code>stdin/stdout</code>；<strong>严禁在服务端使用普通 <code>print()</code></strong>，日志必须打往 <code>sys.stderr</code>。</li>
+          <li><strong>Streamable HTTP 远程传输</strong>：客户端通过 HTTP POST 发送 JSON-RPC，支持按请求开启 SSE 事件流推送进度，配合 OAuth 2.1 / Bearer 鉴权。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>MCP 原语</th>
+            <th>控制主体</th>
+            <th>Python FastMCP 实现装饰器</th>
+            <th>JSON-RPC 方法对</th>
+            <th>实现后在客户端 / 应用里的真实效果</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Tools（工具）</strong></td>
+            <td>大模型提议<br>(Model-controlled)</td>
+            <td><code>@mcp.tool()</code></td>
+            <td><code>tools/list</code><br><code>tools/call</code></td>
+            <td>转换为 LLM <code>tools</code> 参数；模型遇到查实时订单、提工单需求时自动申请触发。</td>
+          </tr>
+          <tr>
+            <td><strong>Resources（资源）</strong></td>
+            <td>应用 / 用户挂载<br>(Application-controlled)</td>
+            <td><code>@mcp.resource("policy://{id}")</code></td>
+            <td><code>resources/list</code><br><code>resources/read</code></td>
+            <td>类似聊天框里的 <code>@文件</code> 引用菜单，用户或程序直接按 URI 无副作用读入制度、配置与表结构。</td>
+          </tr>
+          <tr>
+            <td><strong>Prompts（模板）</strong></td>
+            <td>用户主动选用<br>(User-controlled)</td>
+            <td><code>@mcp.prompt()</code></td>
+            <td><code>prompts/list</code><br><code>prompts/get</code></td>
+            <td>在输入框敲 <code>/</code> 弹出快捷指令表单（如 <code>/audit_refund A100</code>），一键填充专家级审查提示词。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>四、核心工程术语检索词典</h2>
+    <input id="termSearch" type="search" placeholder="🔍 输入关键词过滤术语（如 ReAct、MCP、幂等、Schema、RAG、HITL）…" style="width:100%;padding:10px 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);margin-bottom:14px">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:220px">术语（中 / 英）</th><th>准确工程定义与实践要点</th></tr>
+        </thead>
+        <tbody id="glossaryBody"></tbody>
+      </table>
+    </div>
+
+    <h2>五、一手权威论文、标准与官方文档导航</h2>
+    <div class="card">
+      <ul class="obj-list" id="refList"></ul>
+    </div>
+  </div>
+
+  <script src="textbook-part1.js"></script>
+  <script src="textbook-part2.js"></script>
+  <script src="textbook.js"></script>
+  <script>
+  (function() {
+    const savedTheme = localStorage.getItem("agentlab-theme");
+    if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+
+    const terms = [
+      ["Agent Runtime（智能体运行时）", "围绕大模型编写的控制循环程序，负责拼装上下文、解析工具调用、执行权限校验、调度本地函数、控制轮次预算与错误恢复。"],
+      ["Workflow vs Agent（工作流与智能体）", "Workflow 由确定性代码预先编排调用顺序；Agent 允许大模型根据中间工具返回结果自主决定下一步行动及何时终止。"],
+      ["ReAct（Reasoning + Acting）", "Yao et al. 提出的交替式范式：思考缺什么信息（Thought）→ 调用外部工具（Action）→ 观察真实返回（Observation）→ 继续下一轮推理。"],
+      ["Function Calling / Tool Use", "大模型原生能力：接收工具名称、描述与 JSON Schema 参数约束，在需要外部能力时输出结构化调用请求（而非直接执行代码）。"],
+      ["JSON Schema & Constrained Decoding", "定义工具输入结构的声明规范；服务端配合受限解码可在采样阶段强制模型生成 100% 符合语法与字段要求的 JSON。"],
+      ["Tool Registry（工具注册中心）", "维护协议层工具名到真实受控业务函数的白名单映射表，杜绝反射调用任意未授权方法。"],
+      ["Principal（可信身份主体）", "由企业认证网关（JWT/Session）解析出的租户、用户与权限集合，必须由服务端直接注入业务查询，严禁交由大模型填写。"],
+      ["Excessive Agency（过度代理）", "OWASP LLM Top 10 核心风险之一：赋予智能体超出必要范围的工具权限或跳过人工审批直接触发高危写入。"],
+      ["Idempotency Key（幂等键）", "绑定单次业务意图的唯一标识（常配合参数 SHA-256 指纹）：保证网络超时或循环重试不会造成重复扣款、重复建单。"],
+      ["HITL（Human-in-the-Loop 人工介入）", "将高风险操作设计为持久化状态机（如 pending_approval），Agent 仅提申请，由独立权限的人类审批者确认后才真正执行。"],
+      ["MCP（Model Context Protocol）", "基于 JSON-RPC 2.0 的开放连接标准：Host 通过客户端向任意语言编写的 MCP Server 动态发现 Tools、读取 Resources、获取 Prompts。"],
+      ["Context Engineering（上下文工程）", "精细规划模型单次请求的输入预算、指令位置、原子交互组配对裁剪与按需检索，最大化上下文窗口信噪比。"],
+      ["RAG & Embedding（向量检索增强）", "利用 Embedding 模型将查询与知识库片段映射到同一向量空间，通过余弦相似度召回高相关证据辅助回答。"],
+      ["Skills & Agent Harness", "Skill 是支持按需渐进式加载的领域作业规程包；Harness 是包裹在模型外围的完整工具、沙箱、钩子、检查点与监控支撑底座。"],
+      ["Eval Harness & Trajectory（轨迹评估）", "针对概率性智能体的自动化回归测试集：不仅检验最终文本忠实度，还同时断言中间调用的工具序列、参数精确度与拒止行为。"],
+      ["Tracing & Span（全链路追踪）", "使用唯一 trace_id 串联一次任务内所有模型请求与工具调用的输入、输出、耗时和 Token 消耗，用于性能瓶颈与故障定位。"]
+    ];
+
+    const tbody = document.getElementById("glossaryBody");
+    function renderTerms(q = "") {
+      tbody.replaceChildren();
+      const kw = q.trim().toLowerCase();
+      terms.filter(([k, v]) => !kw || k.toLowerCase().includes(kw) || v.toLowerCase().includes(kw))
+           .forEach(([k, v]) => {
+             const tr = document.createElement("tr");
+             const td1 = document.createElement("td");
+             td1.innerHTML = "<strong>" + k + "</strong>";
+             const td2 = document.createElement("td");
+             td2.textContent = v;
+             tr.append(td1, td2);
+             tbody.append(tr);
+           });
+    }
+    document.getElementById("termSearch").oninput = e => renderTerms(e.target.value);
+    renderTerms();
+
+    const refList = document.getElementById("refList");
+    (window.TEXTBOOK_REFERENCES || []).forEach(([title, url, desc]) => {
+      const li = document.createElement("li");
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = title;
+      const span = document.createElement("span");
+      span.className = "muted-meta";
+      span.textContent = " — " + desc;
+      li.append(a, span);
+      refList.append(li);
+    });
+  })();
+  </script>
+</body>
+</html>

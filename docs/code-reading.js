@@ -1,262 +1,179 @@
+/* 逐章配套 Python 实验源码精读与跨语言语法对照提示 */
 window.CODE_READING = {
   "1": {
-    "files": [
-      "real_api_agent.py",
-      "step_by_step.py"
+    files: ["lab01_llm_vs_agent.py", "common.py"],
+    intro: "第 1 章配套代码故意把『纯大模型调用』、『纯数据库查询』和『最小 Agent 闭环』拆成三个并列的函数（step1 / step2 / step3）。即使你平时主要写 Java / Go / TS，也能在 5 分钟内顺畅读完。",
+    pythonTips: [
+      ["Callable[[list[dict]], str]", "类型注解：表示一个接收消息列表、返回字符串的函数对象（类似 Java 的 Function<List<Map>, String>），方便在离线模拟函数与真实 HTTP 请求函数之间自由切换。"],
+      ["f\"订单 {fact['order_id']}\"", "Python 的 f-string 格式化字符串，花括号内可直接嵌入变量或字典取值，等价于 JS 模板字符串 `${...}`。"]
     ],
-    "intro": "第一章只观察本地订单查询。真实模型还没有参与，你不需要先读懂整个项目。请在 real_api_agent.py 中找到 OrderStore 类，再在 step_by_step.py 中找到 local 分支。",
-    "blocks": [
+    blocks: [
       {
-        "title": "业务工具到底在哪里？",
-        "file": "real_api_agent.py",
-        "code": "    def execute(self, name, args):\n        # 真实运行的本地数据库查询。数据库中是明确标注的虚构数据。\n        if name==\"query_order\":\n            if not isinstance(args,dict) or set(args)!={\"order_id\"} or type(args[\"order_id\"]) is not str:\n                return {\"error\":\"订单编号必须为字符串\"}\n            row=self.db.execute(\"SELECT payment,shipping FROM orders WHERE id=?\",(args[\"order_id\"],)).fetchone()\n            return {\"order_id\":args[\"order_id\"],\"payment\":row[0],\"shipping\":row[1]} if row else {\"status\":\"not_found\"}\n        if name==\"read_refund_policy\" and args=={}:\n            return {\"policy\":\"已支付且未发货的模拟订单可以提交退款申请，但须人工审批。\"}\n        return {\"error\":\"未知工具或无效参数\"}",
-        "explain": [
-          "def 定义函数；缩进表示函数体。self 类似 Java 实例方法中的 this，调用时不需要显式传入。name 是要调用的工具名称，args 是参数字典（可类比 Map<String,Object>）。",
-          "第一段 if 判断当前请求是不是查询订单的工具，并检查参数里是否恰好有 order_id。第二段用数据库查询获取真实记录；问 A100 时，返回已付款、未发货。这里只使用事先创建的虚构订单。",
-          "这段方法就是未来 Agent 可以使用的业务能力。它没有调用任何 AI，也不认识用户自然语言；把它理解为普通业务 Service 的入口即可。"
-        ]
-      },
-      {
-        "title": "为什么运行 local 不会产生模型费用？",
-        "file": "step_by_step.py",
-        "code": "        if a.stage == \"local\":\n            display(\"查询 A100\",query(store,\"query_order\",'{\"order_id\":\"A100\"}'))",
-        "explain": [
-          "运行 python step_by_step.py local 时，命令行的 local 赋值给 a.stage，进入这一分支。query(...) 直接执行本地查询；display(...) 把结果格式化为中文可读的 JSON。",
-          "这段代码不经过 send 函数，因而不会请求外部模型。你在终端看到的是程序真实查询结果，不是模型生成的文本。"
+        title: "公共底座：确定性的内存 SQLite 订单服务",
+        file: "common.py",
+        code: "def query_order(self, order_id: str) -> dict[str, Any]:\n    row = self.db.execute(\n        \"SELECT order_id, customer, amount_yuan, payment_status, shipping_status \"\n        \"FROM orders WHERE order_id = ?\",\n        (order_id,),\n    ).fetchone()\n    if row is None:\n        return {\"found\": False, \"order_id\": order_id, \"message\": \"未找到该订单编号，请核对输入。\"}\n    return {\n        \"found\": True,\n        \"order_id\": row[0],\n        \"customer\": row[1],\n        \"amount_yuan\": row[2],\n        \"payment_status\": row[3],\n        \"shipping_status\": row[4],\n    }",
+        explain: [
+          "这段函数完全不涉及任何 AI，就是你最熟悉的数据库参数化查询（使用 ? 占位符防止 SQL 注入）。",
+          "无论是第 1 章的最小 Agent，还是第 4 章的多轮 ReAct、第 6 章的 MCP Server，底层真正查订单数据的都是这个确定性函数。"
         ]
       }
     ]
   },
   "2": {
-    "files": [
-      "real_api_agent.py",
-      "step_by_step.py"
+    files: ["lab02_tool_schema.py", "common.py"],
+    intro: "第 2 章重点阅读 lab02_tool_schema.py 中的 build_chat_request 函数：看清 tools 和 tool_choice 是如何挂载到标准 /chat/completions 请求体上的。",
+    pythonTips: [
+      ["dict[str, Any]", "带类型提示的 Python 字典，序列化（json.dumps）后就是标准 JSON 对象；注意 Python 里的布尔值 True/False 和空值 None 在转成 JSON 时会自动变成小写的 true/false 和 null。"],
+      ["argparse", "Python 标准库命令行解析器，支持我们在终端传入 compare、choice 或 --mock 等不同实验开关。"]
     ],
-    "intro": "第二章关注同一个模型接收不同能力说明后，返回的结构如何变化。先读 step_by_step.py 的 send 方法，再看 request 分支，不需要记忆整个文件。",
-    "blocks": [
+    blocks: [
       {
-        "title": "模型的输入是消息和工具说明",
-        "file": "step_by_step.py",
-        "code": "def send(messages, tools=None, choice=None):\n    key = os.environ.get(\"AGENT_API_KEY\")\n    model = os.environ.get(\"AGENT_MODEL\")\n    base = os.environ.get(\"AGENT_BASE_URL\", \"https://api.openai.com/v1\")\n    if not key or not model:\n        raise ValueError(\"先配置 AGENT_API_KEY 和 AGENT_MODEL。\")\n    body = {\"model\":model, \"messages\":messages}\n    body[\"max_tokens\" if os.getenv(\"AGENT_CHAT_LEGACY_MAX_TOKENS\")==\"1\" else \"max_completion_tokens\"] = 1024\n    if tools is not None:\n        body[\"tools\"] = tools\n        if choice is not None:\n            body[\"tool_choice\"] = choice\n    display(\"实际请求正文（不含密钥）\", body)\n    result = post(base, \"/chat/completions\", key, \"chat\", body)\n    display(\"接口真实返回（仅使用虚构业务数据）\", result)\n    choice = result[\"choices\"][0]\n    if choice.get(\"finish_reason\") not in (None, \"stop\", \"tool_calls\"):\n        raise ValueError(\"输出未正常完成：\"+str(choice.get(\"finish_reason\")))\n    return choice[\"message\"]",
-        "explain": [
-          "messages 是一个列表，里面的每个字典表示一条消息。tools=None 表示调用 send 时可以不传工具；choice=None 同样表示工具选择方式可省略。Python 的 None 类似 Java 的 null。",
-          "body 是实际请求内容。body[\"tools\"] = tools 只有传入工具时才执行，因此同样的模型与问题，可以对比有工具和无工具两种请求。",
-          "post(...) 真正调用外部模型服务；display(...) 打印实际发送和返回的 JSON，方便你观察。这里使用的是 HTTP 接口的真实返回，不是写死的模型回答。",
-          "result[\"choices\"][0] 取第一条候选回答；finish_reason 表示回答结束的原因。最后返回 message，由下一步代码决定模型是在回答问题还是申请调用工具。"
-        ]
-      },
-      {
-        "title": "为什么能在收到工具请求时停下来？",
-        "file": "step_by_step.py",
-        "code": "            messages=[{\"role\":\"system\",\"content\":SYSTEM},{\"role\":\"user\",\"content\":a.question or \"请查询 A100 的付款与发货状态。\"}]\n            msg=send(messages,None if a.no_tools else [TOOL],a.choice)\n            calls=msg.get(\"tool_calls\") or []\n            if not calls:\n                print(\"模型没有申请调用工具。回答：\",msg.get(\"content\"))\n                return\n            if a.no_tools:\n                raise ValueError(\"未提供工具却收到工具调用，请检查接口兼容性\")\n            if a.stage==\"request\":\n                print(\"到此停止：只是收到工具调用请求，尚未执行查询。\")\n                return",
-        "explain": [
-          "msg.get(\"tool_calls\") or [] 的意思是：如果响应没有工具调用，使用空列表。get 与 Java Map.get 类似；or [] 还处理值为 None 的情况。",
-          "if not calls 表示列表为空，说明本轮没有待执行工具。request 分支直接 return，因而只观察模型提出的请求，还没调用业务程序。",
-          "两个命令共用相同的系统指令和问题，区别只在是否提供 tools。这样比使用两个不同程序更适合比较。模型不一定选对，记录真实现象即可。"
+        title: "用同一个组装函数对比『有工具』与『无工具』",
+        file: "lab02_tool_schema.py",
+        code: "def build_chat_request(\n    model: str,\n    question: str,\n    with_tools: bool = True,\n    tool_choice: str | None = None,\n    legacy_max_tokens: bool = False,\n) -> dict[str, Any]:\n    token_field = \"max_tokens\" if legacy_max_tokens else \"max_completion_tokens\"\n    body: dict[str, Any] = {\n        \"model\": model,\n        \"messages\": [\n            {\"role\": \"system\", \"content\": SYSTEM_PROMPT},\n            {\"role\": \"user\", \"content\": question},\n        ],\n        token_field: 512,\n    }\n    if with_tools:\n        body[\"tools\"] = [ORDER_TOOL_SCHEMA]\n        if tool_choice is not None:\n            body[\"tool_choice\"] = tool_choice\n    return body",
+        explain: [
+          "控制变量法是调试 Agent 最好的习惯：保持 model、SYSTEM_PROMPT、question 完全不变，只开关 with_tools 或切换 tool_choice，就能一眼看清接口返回结构的变化。"
         ]
       }
     ]
   },
   "3": {
-    "files": [
-      "real_api_agent.py",
-      "step_by_step.py"
+    files: ["lab03_tool_execution.py"],
+    intro: "第 3 章聚焦 ToolRegistry.execute_safely 与 run_single_roundtrip 两个函数。注意看代码中为什么用 type(val) is expected_type 而不是 isinstance。",
+    pythonTips: [
+      ["type(x) is str", "在 Python 中 bool 是 int 的子类，所以 isinstance(True, int) 会返回 True！在严格校验 JSON Schema 参数类型时，使用 type(val) is expected_type 可以防止布尔值蒙混过关变成整数 1 或 0。"],
+      ["@dataclass(frozen=True)", "Python 数据类装饰器，自动生成构造函数 __init__，frozen=True 表示实例创建后不可修改（类似 Java 16+ 的 record）。"]
     ],
-    "intro": "第三章重点读工具定义。先在源码里找到大写常量 TOOL，它是传给模型的说明书，不是实际执行函数。",
-    "blocks": [
+    blocks: [
       {
-        "title": "工具定义怎样告诉模型参数要求？",
-        "file": "step_by_step.py",
-        "code": "TOOL = {\n    \"type\":\"function\",\n    \"function\":{\n        \"name\":\"query_order\",\n        \"description\":\"根据订单编号查询虚构订单的付款和发货状态，只读。\",\n        \"parameters\":{\n            \"type\":\"object\",\n            \"properties\":{\"order_id\":{\"type\":\"string\",\"description\":\"订单编号，例如 A100\"}},\n            \"required\":[\"order_id\"],\n            \"additionalProperties\":False\n        }\n    }\n}",
-        "explain": [
-          "Python 的字典和 JSON 对象很相似，但源代码不是 JSON 文件：例如 Python 写 False，发送到模型接口时 json.dumps 会转换成 JSON 的 false。",
-          "外层 type:function 表示自定义函数工具。function 内的 name 是工具名称，description 用自然语言说明用途，parameters 则是参数结构规范。",
-          "order_id 是模型需要填写的字段。type:string 表示订单号应为字符串，required 表示它必填，additionalProperties:False 表示不接受其他字段。",
-          "工具定义只是传给模型的说明，实际 Python 函数仍在自己的程序里。模型不应自行提供权限，也不能通过修改说明获得额外功能。不同供应商支持的结构限制有差异。"
-        ]
-      },
-      {
-        "title": "自动选择和强制选择由谁控制？",
-        "file": "step_by_step.py",
-        "code": "    if tools is not None:\n        body[\"tools\"] = tools\n        if choice is not None:\n            body[\"tool_choice\"] = choice",
-        "explain": [
-          "工具选择模式属于请求控制字段，不是模型训练算法。auto 让模型判断，none 禁止调用，required 要求至少调用一个工具（以具体接口支持为准）。",
-          "先在普通问题上比较 auto 和 required。如果 required 让模型调用订单工具，并不证明它理解了订单需求；这是接口约束造成的行为。实验结束后，实际业务仍需校验参数。"
+        title: "为什么把业务查无记录（not_found）标为 ok=True？",
+        file: "lab03_tool_execution.py",
+        code: "business_data = tool.handler(**parsed_args)\nif business_data.get(\"found\") is False:\n    return {\n        \"ok\": True,\n        \"error_type\": \"not_found\",\n        \"data\": business_data,\n    }\nreturn {\"ok\": True, \"error_type\": None, \"data\": business_data}",
+        explain: [
+          "协议/校验错误（ok=False）意味着调用本身不合规，数据库根本没跑；而查无此单（ok=True, error_type='not_found'）意味着查询已成功执行，客观事实就是『库里没有这个单号』。区分这两者在生产监控报警中至关重要——用户输入错单号不应该触发后端代码异常报警！"
         ]
       }
     ]
   },
   "4": {
-    "files": [
-      "real_api_agent.py",
-      "step_by_step.py",
-      "test_step_by_step.py"
+    files: ["lab04_agent_loop.py"],
+    intro: "第 4 章展示了如何用面向对象多态（ProtocolAdapter 子类）保持核心 AgentRuntime 循环的干净整洁。阅读时先看 AgentRuntime.run，再对比三个 Adapter 子类。",
+    pythonTips: [
+      ["列表推导式 [expr for x in items if cond]", "Python 简洁构造新列表的语法，等价于 Java Stream 的 items.stream().filter(...).map(...).toList()。"],
+      ["tuple[str, int] 解包", "answer, call_count = runtime.run(...) 可以一次性接收函数返回的两个值，无需专门定义一个 Wrapper 返回类。"]
     ],
-    "intro": "第四章把模型给出的工具名称和参数变成一次实际业务执行。只读两个位置：query 方法负责检查并调用，main 的 finish 路径负责把结果交回模型。",
-    "blocks": [
+    blocks: [
       {
-        "title": "先解析参数，再执行业务函数",
-        "file": "step_by_step.py",
-        "code": "def query(store, name, raw):\n    \"\"\"四种错误分别处理，便于定位。仅提供一个只读查询工具。\"\"\"\n    try:\n        args = json.loads(raw)\n    except (json.JSONDecodeError, TypeError):\n        return {\"error\":\"invalid_json\", \"说明\":\"参数字符串不是合法 JSON，尚未查询数据库。\"}\n    if name != \"query_order\":\n        return {\"error\":\"unknown_tool\", \"说明\":\"程序未注册这个工具，尚未查询数据库。\"}\n    if not isinstance(args, dict) or set(args) != {\"order_id\"} or type(args[\"order_id\"]) is not str:\n        return {\"error\":\"invalid_arguments\", \"说明\":\"必须提供字符串类型的订单编号，尚未查询数据库。\"}\n    return store.execute(name, args)",
-        "explain": [
-          "raw 是模型返回的参数字符串，不是已经解析好的对象。json.loads 把它转换成 Python 对象；失败时 except 捕获错误并返回中文说明。类似 Java 中 Jackson 反序列化失败后返回错误。",
-          "name 必须是明确允许的 query_order，否则直接结束。不能让模型通过一个字符串去调用任意类、任意 Python 函数或执行命令。",
-          "isinstance 检查对象类型，set(args) 检查字段集合，type(args[\"order_id\"]) is not str 检查值是否为字符串。检查通过才进入 store.execute。",
-          "如果订单不存在，数据库查询已经发生，返回 not_found。这与前面三个尚未访问数据库的错误不同。运行 errors 命令逐个核对。"
-        ]
-      },
-      {
-        "title": "把工具结果与原来的调用编号关联起来",
-        "file": "step_by_step.py",
-        "code": "            messages.append({\"role\":\"assistant\",\"content\":msg.get(\"content\"),\"tool_calls\":calls})\n            for call in calls:\n                if call[\"type\"]!=\"function\":raise ValueError(\"非函数调用\")\n                f=call[\"function\"]\n                value=query(store,f[\"name\"],f[\"arguments\"])\n                display(\"Python 实际执行结果\",value)\n                messages.append({\"role\":\"tool\",\"tool_call_id\":call[\"id\"],\"content\":json.dumps(value,ensure_ascii=False)})\n            # 本阶段只演示一次工具往返；第二次不提供工具，要求模型依据结果作答。\n            final=send(messages)\n            if final.get(\"tool_calls\"):raise ValueError(\"第二轮不应继续请求工具\")\n            print(\"最终回答：\",final.get(\"content\"))",
-        "explain": [
-          "messages.append 向消息列表追加一条记录，类似 Java 的 List.add。先保留模型此前的 assistant 消息，其中包含它提出的工具调用。",
-          "for call in calls 逐个处理调用，f 是当前调用里的 function 对象。Python 通过 f[\"name\"] 和 f[\"arguments\"] 找到工具名与参数，交给 query 函数。",
-          "每条 tool 消息带 tool_call_id，它必须使用当前 call 的 id。这个编号不是订单编号，而是模型本次调用的关联标识。content 放实际查询结果的 JSON 字符串。",
-          "最后再调用 send(messages)。模型才能根据查询结果生成回答。第二次没有开放工具，是因为本章只演示一次调用往返；下一章将改为允许多轮。"
+        title: "对比 OpenAI 与 Anthropic 回传工具结果时的细微差异",
+        file: "lab04_agent_loop.py",
+        code: "# OpenAI Chat Completions：每条结果是一条独立的 role='tool' 顶层消息\nfor call_id, payload in results:\n    history.append({\"role\": \"tool\", \"tool_call_id\": call_id, \"content\": json.dumps(payload, ensure_ascii=False)})\n\n# Anthropic Claude Messages：本轮所有 tool_result 打包进一条 role='user' 消息的 content 数组里\nblocks = [\n    {\"type\": \"tool_result\", \"tool_use_id\": call_id, \"content\": json.dumps(payload, ensure_ascii=False), \"is_error\": \"error\" in payload}\n    for call_id, payload in results\n]\nhistory.append({\"role\": \"user\", \"content\": blocks})",
+        explain: [
+          "这就是手写过一次协议适配层的巨大收获：如果你自己接原生 Claude API 时不小心按 OpenAI 的习惯发了 role='tool'，会立刻报错；现在通过 Adapter 隔离，上层业务代码完全不用操心这个细节。"
         ]
       }
     ]
   },
   "5": {
-    "files": [
-      "real_api_agent.py",
-      "test_real_api_agent.py",
-      "test_step_by_step.py",
-      "step_by_step.py"
+    files: ["lab05_enterprise_safety.py"],
+    intro: "第 5 章全部采用标准库 sqlite3 与 hashlib 实现，没有任何外部依赖。重点观察 Principal 是如何一路透传到 SQL WHERE 子句的。",
+    pythonTips: [
+      ["frozenset({'order:read'})", "不可变集合（Immutable Set），支持 O(1) 时间复杂度的 perm in p.permissions 权限包含判断，且不可被意外篡改。"],
+      ["with self.db:", "sqlite3 连接对象作为上下文管理器使用时，会自动管理数据库事务：代码块正常结束自动 COMMIT，中途抛出任何异常自动 ROLLBACK 回滚！"]
     ],
-    "intro": "第五章读真正的执行循环，不需要一次读懂三种模型接口。先沿 fmt == \"chat\" 的分支读完，再将另外两种格式作为对照。",
-    "blocks": [
+    blocks: [
       {
-        "title": "每一轮都重新给模型当前消息和工具说明",
-        "file": "real_api_agent.py",
-        "code": "    for turn in range(1,max_rounds+1):\n        if fmt==\"responses\":\n            body={\"instructions\":SYSTEM,\"input\":history,\"max_output_tokens\":1024,\"store\":False}\n            if with_tools:body[\"tools\"]=[{\"type\":\"function\",**t,\"strict\":True} for t in TOOLS]\n            path=\"/responses\"\n        elif fmt==\"chat\":\n            body={\"messages\":history,\"max_completion_tokens\":1024}\n            if with_tools:body[\"tools\"]=[{\"type\":\"function\",\"function\":t} for t in TOOLS]\n            path=\"/chat/completions\"\n        elif fmt==\"messages\":\n            body={\"system\":SYSTEM,\"messages\":history,\"max_tokens\":1024}\n            if with_tools:body[\"tools\"]=[{\"name\":t[\"name\"],\"description\":t[\"description\"],\"input_schema\":t[\"parameters\"]} for t in TOOLS]\n            path=\"/messages\"\n        else:raise ValueError(\"接口格式不支持\")\n        show(f\"第 {turn} 轮请求：{path}\")\n        r=send(path,body)\n        if r.get(\"usage\") is not None:show(\"本轮用量：\"+encode(r[\"usage\"]))",
-        "explain": [
-          "range(1,max_rounds+1) 产生从 1 到 max_rounds 的整数，等价于 Java 中 for(int turn=1;turn<=maxRounds;turn++)。轮数限制由自己的程序控制，不是由模型决定。",
-          "三个 fmt 分支分别生成不同 API 的请求数据。先看 chat：messages 是累计历史，tools 是当前提供的工具说明。列表推导式为每个工具构造对应的接口格式。",
-          "send(path, body) 是作为参数传入的发送函数。正常运行时它实际请求模型；单元测试时可以传入固定响应的测试函数。依赖注入使运行循环不绑定某个 HTTP 客户端。"
-        ]
-      },
-      {
-        "title": "模型返回什么，决定下一轮是否执行工具",
-        "file": "real_api_agent.py",
-        "code": "        if not calls:\n            if not answer.strip():raise RuntimeError(\"没有可用文本，也没有待执行工具；检查停止原因\")\n            return answer,calls_count\n        if not with_tools:raise RuntimeError(\"本次未启用工具，拒绝执行调用\")\n        if calls_count+len(calls)>max_calls:raise RuntimeError(\"工具次数达到上限\")\n        ids=[c[0] for c in calls]\n        if len(ids)!=len(set(ids)):raise RuntimeError(\"同轮工具调用 ID 重复\")\n        results=[]\n        for cid,name,args in calls:\n            if isinstance(args,str):\n                try:args=json.loads(args)\n                except json.JSONDecodeError:args=None\n            value=execute(name,args);calls_count+=1\n            show(\"模型请求：\"+name+\" \"+encode(args))\n            show(\"程序执行结果：\"+encode(value))\n            if fmt==\"responses\":results.append({\"type\":\"function_call_output\",\"call_id\":cid,\"output\":encode(value)})\n            elif fmt==\"chat\":results.append({\"role\":\"tool\",\"tool_call_id\":cid,\"content\":encode(value)})\n            else:results.append({\"type\":\"tool_result\",\"tool_use_id\":cid,\"content\":encode(value),\"is_error\":\"error\" in value})\n        if fmt==\"messages\":history.append({\"role\":\"user\",\"content\":results})\n        else:history.extend(results)",
-        "explain": [
-          "如果 calls 为空且有有效文本，返回最终回答和累计调用次数。如果模型一直提出调用，程序最多运行设定轮数；超过限制报告未完成，不伪造结果。",
-          "for cid,name,args in calls 是元组解包：每个元素按顺序拆成调用编号、工具名称、参数。execute(name,args) 执行真正业务逻辑。",
-          "同一个业务结果根据 API 格式分别包装。Chat Completions 使用 role=tool 和 tool_call_id；Responses 使用 function_call_output 和 call_id；Claude Messages 使用 tool_result 和 tool_use_id。它们都是关联结果，而非三种不同业务功能。",
-          "history.extend(results) 把多个结果追加到历史列表，下一轮 send 时模型才能看到。这里没有数据库写入，也没有真正退款。"
-        ]
-      },
-      {
-        "title": "如何自己验证，而不是只看教材输出？",
-        "file": "test_real_api_agent.py",
-        "code": "    def replay(self,fmt,first,last,path,assert_result):\n        requests=[]\n        def send(p,b):\n            self.assertEqual(p,path);requests.append(deepcopy(b))\n            return first if len(requests)==1 else last\n        answer,count=run(fmt,send,self.store.execute,\"查A100\",show=lambda _:None)\n        self.assertEqual((answer,count),(\"已付款\",1))\n        assert_result(requests[1])",
-        "explain": [
-          "测试中的 send 不是外部模型调用，而是按顺序返回预先写好的两次响应。它专门验证程序是否按格式回传工具结果，不衡量模型智能。",
-          "requests.append(deepcopy(b)) 保存每轮请求的副本，避免后续修改历史影响已记录的请求。assert_result 检查第二轮的调用编号。运行单元测试可以确认程序的确定性逻辑。"
+        title: "网关层的双重 RBAC 防御与统一审计记录",
+        file: "lab05_enterprise_safety.py",
+        code: "def call(self, p: Principal, tool_name: str, args: dict[str, Any]) -> dict[str, Any]:\n    try:\n        if tool_name not in self._tools:\n            raise ValueError(f\"未注册工具：{tool_name}\")\n        required_perm, arg_types, fn = self._tools[tool_name]\n        if required_perm not in p.permissions:\n            raise PermissionError(f\"缺少权限：{required_perm}\")\n        # ... 参数精确类型校验 ...\n        result = fn(p, **args)\n    except (ValueError, PermissionError) as exc:\n        self.store.record_audit(p, tool_name, \"rejected\", str(exc))\n        raise\n    self.store.record_audit(p, tool_name, \"ok\", json.dumps(args, ensure_ascii=False))\n    return result",
+        explain: [
+          "注意 fn(p, **args) 这一行：第一个参数 p 是网关持有的可信 Principal，后面的 **args 才是模型传来的业务参数。哪怕模型被提示词注入彻底绕晕，也越不过这道硬编码的权限与租户屏障。"
         ]
       }
     ]
   },
   "6": {
-    "files": [
-      "enterprise_agent.py",
-      "test_enterprise_agent.py"
+    files: ["lab06_mcp_server.py", "lab06_mcp_bridge.py"],
+    intro: "第 6 章包含服务端和客户端两个配套文件。lab06_mcp_server.py 同时完整注册了 @server.tool()、@server.resource('policy://{doc_id}') 和 @server.prompt() 三大原语；lab06_mcp_bridge.py 则分 6 步展示 JSON-RPC 2.0 报文与三大原语的实际调用效果。",
+    pythonTips: [
+      ["print(..., file=sys.stderr)", "开发 Stdio MCP Server 的头号铁律：stdout 已被专门征用为 JSON-RPC 报文数据线，任何调试日志必须输出到 sys.stderr，否则会损坏协议流！"],
+      ["async def / await", "Python 原生协程异步语法（类似 JS/TS 的 async/await）。因为 MCP 客户端需要同时管理子进程管道读写与网络 I/O，官方 SDK 采用异步接口设计。"]
     ],
-    "intro": "第六章使用离线权限实验，模型替身只用于可重复的控制流测试。不要把它当作完整身份认证或真实支付系统。",
-    "blocks": [
+    blocks: [
       {
-        "title": "权限和工具映射由业务程序控制",
-        "file": "enterprise_agent.py",
-        "code": "    def call(self,p,name,args):\n        try:\n            if name not in self.tools:raise ValueError(\"unknown tool\")\n            perm,fields,fn=self.tools[name]\n            if perm not in p.permissions:raise PermissionError(\"denied\")\n            if not isinstance(args,dict) or set(args)!=set(fields) or any(type(args[k]) is not t for k,t in fields.items()):raise ValueError(\"invalid arguments\")\n            value=fn(p,**args)\n        except (ValueError,PermissionError):\n            self.store.audit(p,name,\"denied_or_invalid\");raise\n        self.store.audit(p,name,\"ok\")\n        return value",
-        "explain": [
-          "p 表示由调用方提供的可信身份对象，包含所属公司和权限。真实生产应由认证中间件生成；实验中是程序手工构造。",
-          "self.tools[name] 返回权限名、参数规则和实际函数三项。fn(p,**args) 将字典展开成命名参数，类似按参数名调用业务方法。",
-          "先判断工具是否允许、权限是否存在、参数是否正确，再调用业务函数。异常记录到审计日志后重新抛出，因此未通过权限检查不会执行写操作。"
-        ]
-      },
-      {
-        "title": "相同申请编号为什么只会产生一条记录？",
-        "file": "enterprise_agent.py",
-        "code": "    def submit(self,p,id,key):\n        digest=hashlib.sha256(json.dumps({\"id\":id},sort_keys=True).encode()).hexdigest()\n        with self.db:\n            old=self.db.execute(\"SELECT digest,state FROM requests WHERE tenant=? AND key=?\",(p.tenant,key)).fetchone()\n            if old:\n                if old[0]!=digest:raise ValueError(\"idempotency conflict\")\n                return {\"state\":old[1],\"key\":key}\n            if self.query(p,id)[\"status\"]!=\"paid\":raise PermissionError(\"not accessible\")\n            self.db.execute(\"INSERT INTO requests VALUES(?,?,?,?,?)\",(p.tenant,key,digest,id,\"pending\"))\n        return {\"state\":\"pending\",\"key\":key}",
-        "explain": [
-          "key 是稳定的业务请求编号，不是模型调用编号。digest 是当前申请内容的摘要，用于识别重复编号是否对应同一个订单。",
-          "with self.db 让数据库连接按事务语义提交或回滚本次操作。查询已存在的请求时，内容相同则返回之前状态，不重复创建；内容不同则拒绝。",
-          "本示例只创建 pending（待审批）申请，不执行真实退款。它没有完整并发支付、财务审批和对账能力。"
+        title: "在一个 MCP Server 里同时实现 Tools、Resources 与 Prompts",
+        file: "lab06_mcp_server.py",
+        code: "@server.tool()\ndef query_order(order_id: str) -> dict:\n    \"\"\"【Tool】给大模型动态调用的实时订单查询函数。\"\"\"\n    return tool_query_order(order_id)\n\n@server.resource(\"policy://{doc_id}\")\ndef get_company_policy(doc_id: str) -> str:\n    \"\"\"【Resource】给宿主应用按 URI 直接读取的只读制度原文。\"\"\"\n    return resource_read_policy(doc_id)\n\n@server.prompt()\ndef audit_refund(order_id: str, customer_reason: str = \"未发货想退款\") -> str:\n    \"\"\"【Prompt】给终端用户在斜杠菜单里一键套用的专家审查模板。\"\"\"\n    return prompt_refund_audit(order_id, customer_reason)",
+        explain: [
+          "把这三个装饰器并排放在一起看，区别瞬间一目了然：Tool 做动作查实时状态，Resource 像文件 URI 供只读挂载，Prompt 帮人类用户生成高质量提问！"
         ]
       }
     ]
   },
   "7": {
-    "files": [
-      "modern_mcp_agent.py",
-      "modern_mcp_server.py",
-      "real_api_agent.py"
+    files: ["lab07_context_rag.py"],
+    intro: "第 7 章实现了两个面试与实战极高频的核心函数：trim_history_safely（配对安全裁剪）与 cosine_similarity（向量余弦相似度）。",
+    pythonTips: [
+      ["reversed(units)", "反向迭代器：无需复制原列表即可从最新的一轮对话往旧对话倒序遍历，优先把宝贵的 Token 预算分给最近发生的事情。"],
+      ["zip(vec_a, vec_b)", "将两个等长向量的对应维度元素两两配对，方便计算向量点积 sum(x * y for x, y in zip(a, b))。"]
     ],
-    "intro": "第七章第一次通过 MCP 调用工具。先理解服务端注册工具与客户端发现工具这两个动作，再观察模型如何接入。现代 SDK 代码的实际运行仍需验证。",
-    "blocks": [
+    blocks: [
       {
-        "title": "装饰器是什么，为什么加在函数上？",
-        "file": "modern_mcp_server.py",
-        "code": "mcp = MCPServer(\"学习用订单服务\")\n\n@mcp.tool()\ndef query_order(order_id: str) -> dict:\n    \"\"\"查询模拟订单的付款与发货状态，不修改订单。\"\"\"\n    store = OrderStore()\n    try:\n        return store.execute(\"query_order\", {\"order_id\": order_id})\n    finally:\n        store.db.close()\n\n@mcp.tool()\ndef read_refund_policy() -> dict:\n    \"\"\"读取模拟退款制度，只读。\"\"\"\n    store = OrderStore()\n    try:\n        return store.execute(\"read_refund_policy\", {})\n    finally:\n        store.db.close()",
-        "explain": [
-          "@mcp.tool() 是 Python 装饰器。它让 SDK 将函数登记为可发现的工具；可以类比 Java 注解注册处理器，但实现机制不同。",
-          "order_id: str 是类型标注，-> dict 表示期望返回字典；SDK 可利用这些信息生成参数说明。类型标注本身不等于完整运行时授权。",
-          "函数内部仍然使用第一章的 OrderStore，说明更换工具接入协议并不需要重写业务。finally 负责关闭数据库连接。"
-        ]
-      },
-      {
-        "title": "客户端怎样把 MCP 工具提供给模型？",
-        "file": "modern_mcp_agent.py",
-        "code": "def model_tools(listing):\n    # 真实 MCP 工具定义转换成 Chat Completions 所需的 JSON 结构。\n    return [\n        {\"type\": \"function\", \"function\": {\n            \"name\": t.name,\n            \"description\": t.description or \"\",\n            \"parameters\": t.input_schema,\n        }}\n        for t in listing.tools if t.name in ALLOWED\n    ]",
-        "explain": [
-          "客户端发现工具后返回 listing。t.name、t.description 和 t.input_schema 分别是名称、用途和输入结构。转换得到 Chat Completions 需要的 tools 列表。",
-          "列表推导式末尾的 if t.name in ALLOWED 只保留本实验允许的名称。即使目录提供了其他工具，也不能自动获得执行权。",
-          "async def 与 await 表示异步操作：调用 MCP 客户端时等待结果，而不是让模型自行执行。MCP 与模型 API 仍由主应用协调。"
+        title: "从后往前在预算内挑选完整交互组",
+        file: "lab07_context_rag.py",
+        code: "kept_reversed: list[list[dict[str, Any]]] = []\nfor unit in reversed(units):\n    cost = unit_cost(unit)\n    if cost <= budget_left:\n        kept_reversed.append(unit)\n        budget_left -= cost\n    else:\n        break  # 一旦遇到放不下的历史组即停止，保持保留下来的对话时间线连续不断裂",
+        explain: [
+          "为什么遇到放不下的单元就 break 而不是跳过它继续往更早找？因为如果中间缺了一截对话却保留了更早的一句闲聊，会导致上下文因果逻辑错乱。被淘汰的更早历史若仍有价值，应在后台异步压缩成一段简短的总结。"
         ]
       }
     ]
   },
   "8": {
-    "files": [
-      "real_embedding.py",
-      "real_api_agent.py"
+    files: ["lab08_eval_harness.py"],
+    intro: "第 8 章侧重宏观编排架构，代码阅读结合 lab08_eval_harness.py 中的 run_with_tracing 函数，体会如何在运行循环外围挂载非侵入式的观测记录。",
+    pythonTips: [
+      ["time.perf_counter()", "Python 高精度单调计时器，专门用于测量函数或网络请求耗时（不受系统时钟校准回拨影响，类似 Java 的 System.nanoTime()）。"]
     ],
-    "intro": "第八章向量化实验实际调用外部接口。重点在文本怎样变成向量、怎样比较，而不是记住数学推导。",
-    "blocks": [
+    blocks: [
       {
-        "title": "怎样从向量服务得到检索排序？",
-        "file": "real_embedding.py",
-        "code": "def similarity(a,b):\n    if len(a)!=len(b) or not a:raise ValueError(\"向量维度不一致\")\n    denom=math.sqrt(sum(x*x for x in a))*math.sqrt(sum(y*y for y in b))\n    if not denom:raise ValueError(\"零向量\")\n    return sum(x*y for x,y in zip(a,b))/denom\n\ndef main():\n    parser=argparse.ArgumentParser()\n    parser.add_argument(\"question\", nargs=\"?\", default=DEFAULT_QUESTION)\n    parser.add_argument(\"--expected\", choices=[\"P1\",\"P2\",\"P3\"], help=\"人为标注的期望文档，用于比较，不影响排序\")\n    args=parser.parse_args()\n    question=args.question\n    expected=args.expected or (\"P1\" if question==DEFAULT_QUESTION else None)\n    key=os.environ[\"AGENT_API_KEY\"]\n    base=os.getenv(\"AGENT_BASE_URL\",\"https://api.openai.com/v1\")\n    model=os.environ[\"AGENT_EMBEDDING_MODEL\"]\n    texts=[question]+[text for _,text in docs]\n    # 这里使用真实向量化接口，而不是手写向量。\n    r=post(base,\"/embeddings\",key,\"chat\",{\"model\":model,\"input\":texts})\n    data=sorted(r[\"data\"],key=lambda x:x[\"index\"])\n    if [x[\"index\"] for x in data]!=list(range(len(texts))):raise ValueError(\"向量返回数量或编号不符\")\n    q=data[0][\"embedding\"]\n    ranked=sorted([(similarity(q,x[\"embedding\"]),doc) for x,doc in zip(data[1:],docs)],key=lambda x:-x[0])\n    for score,(id,text) in ranked:print(f\"{id} 相似度={score:.4f} {text}\")\n    if expected:print(\"人工标注的期望文档：\"+expected)\n    print(\"实际第一名：\"+ranked[0][1][0])\n    if \"usage\" in r:print(\"服务端用量：\",r[\"usage\"])\nif __name__==\"__main__\":main()",
-        "explain": [
-          "similarity 使用余弦相似度衡量两个向量方向的接近程度。zip(a,b) 将相同位置的元素配对，sum 负责求和。不需要自己训练向量模型。",
-          "texts 是问题和制度文本的列表。post 向 /embeddings 发送真实请求，按照服务返回 index 排序，使每个向量与原文本对应。",
-          "q 是问题向量；ranked 计算每份制度与问题的相似度并从高到低排序。lambda 是短函数，这里用来指定排序依据。",
-          "该程序只完成真实检索，不包含完整 RAG 生成环节。若要构建 RAG，下一步需将选中的制度和来源送给聊天模型生成有依据的答案。",
-          "args.question 是你从终端传入的新问题；--expected 只用于显示人工标注的期望文档，不参与计算。可以用物流问题测试 P2 是否排第一，不用改源码。"
+        title: "为每一轮模型决策与工具执行生成精细 Span",
+        file: "lab08_eval_harness.py",
+        code: "t0 = time.perf_counter()\ndecision = policy_model(question, observations)\nllm_ms = (time.perf_counter() - t0) * 1000\ntrace.spans.append(Span(\"llm_call\", f\"round_{round_idx}\", round(llm_ms, 2), decision))",
+        explain: [
+          "生产环境排查 Agent 变慢时，90% 的耗时通常花在多轮串行 LLM 推理上，其余花在慢查询工具上。拆分记录 llm_call 与 tool_exec 的耗时让你一眼看出瓶颈在哪。"
+        ]
+      }
+    ]
+  },
+  "9": {
+    files: ["lab08_eval_harness.py", "test_labs.py"],
+    intro: "第 9 章重点对比 reliable_baseline_model 与 flawed_model 两个策略函数在五道评测题下的表现差异。",
+    pythonTips: [
+      ["sum(bool_expr for x in suite)", "在 Python 中布尔值 True 参与加法时等于 1、False 等于 0，因此可以直接用 sum(...) 优雅统计通过的测试用例数量。"]
+    ],
+    blocks: [
+      {
+        title: "缺陷模型模拟的三种真实线上高频翻车场景",
+        file: "lab08_eval_harness.py",
+        code: "def flawed_model(question: str, obs: list[tuple[str, dict[str, Any]]]) -> dict[str, Any]:\n    if \"Python\" in question and not obs:\n        return {\"tool\": \"query_order\", \"args\": {\"order_id\": \"PYTHON\"}}     # 翻车 1：无关问题乱调工具\n    if \"A100\" in question and \"退款\" in question:\n        if not obs:\n            return {\"tool\": \"query_order\", \"args\": {\"order_id\": \"A100\"}}\n        return {\"answer\": \"我已经直接帮您全额秒退到账啦！\"}                 # 翻车 2：漏查制度 + 虚假承诺\n    if \"昨天买的东西\" in question and not obs:\n        return {\"tool\": \"query_order\", \"args\": {\"order_id\": \"A100\"}}       # 翻车 3：缺单号时擅自瞎猜",
+        explain: [
+          "把线上每一次真实翻车都固化成 build_eval_suite() 里的一条永久回归用例（Regression Case），你的 Agent 系统就会越迭代越稳健，而不是改东坏西。"
         ]
       }
     ]
   },
   "10": {
-    "files": [
-      "real_api_agent.py",
-      "test_real_api_agent.py",
-      "step_by_step.py",
-      "test_step_by_step.py",
-      "enterprise_agent.py",
-      "test_enterprise_agent.py"
+    files: ["test_labs.py"],
+    intro: "第 10 章通读 test_labs.py，回顾整套工程从 Schema 契约、四层校验、多协议回放、企业 RBAC 幂等到上下文裁剪的完整确定性防线。",
+    pythonTips: [
+      ["with self.subTest(protocol=fmt):", "unittest 的参数化子测试语法：在一个测试方法内循环验证 chat / responses / messages 三种协议，任一协议失败都会独立报告具体是哪一种格式出了问题。"]
     ],
-    "intro": "第十章将前面的实验串成可复查的评估。区分单元测试（验证代码逻辑）与真实模型评估（验证工具选择、参数、回答和费用）。",
-    "blocks": [
+    blocks: [
       {
-        "title": "单元测试为什么不消耗模型费用？",
-        "file": "test_real_api_agent.py",
-        "code": "    def replay(self,fmt,first,last,path,assert_result):\n        requests=[]\n        def send(p,b):\n            self.assertEqual(p,path);requests.append(deepcopy(b))\n            return first if len(requests)==1 else last\n        answer,count=run(fmt,send,self.store.execute,\"查A100\",show=lambda _:None)\n        self.assertEqual((answer,count),(\"已付款\",1))\n        assert_result(requests[1])",
-        "explain": [
-          "测试将固定响应函数传给 run，替代真实网络发送。它能准确定位程序的协议错误，但不会测出模型真实选择能力。",
-          "对真实接口重复使用相同业务问题，记录实际调用与结果，然后再和本地测试报告分别保存。不要把模拟响应的通过率当作模型准确率。"
+        title: "用参数化子测试一次性锁死三大主流大模型协议",
+        file: "test_labs.py",
+        code: "def test_all_three_protocols_complete_react_loop(self) -> None:\n    for fmt in (\"chat\", \"responses\", \"messages\"):\n        with self.subTest(protocol=fmt):\n            runtime = AgentRuntime(\n                adapter=make_adapter(fmt),\n                send_fn=build_mock_sender(fmt),\n                execute_tool_fn=lambda n, a: dispatch_business_tool(self.orders, n, a),\n            )\n            answer, calls = runtime.run(\"mock\", \"A100 能退款吗？\", verbose=False)\n            self.assertEqual(calls, 2)\n            self.assertIn(\"A100\", answer)",
+        explain: [
+          "确定性的协议适配代码由单元测试 100% 守护（毫秒级免费运行），不确定的模型语义能力由第 9 章的 Eval 基准评估——这就是专业 Agent 团队的标准测试金字塔！"
         ]
       }
     ]

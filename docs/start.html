@@ -1,16 +1,204 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>课程说明 · Agent Lab</title><style>
-:root{color-scheme:light dark;--bg:#f4f5f7;--paper:#fff;--ink:#25313d;--muted:#657384;--line:#dfe4ea;--accent:#156c62}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.9 system-ui,"Microsoft YaHei",sans-serif}main{max-width:900px;margin:auto;padding:28px 28px 70px}nav{display:flex;gap:18px;flex-wrap:wrap;font-size:14px}a{color:var(--accent)}h1{font-size:36px;line-height:1.4;margin:24px 0 14px}h2{font-size:23px;line-height:1.5;margin:32px 0 12px}h3{font-size:18px}p{margin:0 0 15px}.panel{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:18px;margin:18px 0}.muted{color:var(--muted);font-size:14px}pre{background:#192530;color:#e6edf4;border-radius:8px;padding:16px;overflow:auto;font:13px/1.8 monospace}table{border-collapse:collapse;width:100%;font-size:15px}td,th{text-align:left;border-bottom:1px solid var(--line);padding:9px 7px;vertical-align:top}th{font-weight:650}.btn{display:inline-block;border-radius:7px;background:var(--accent);color:white;padding:8px 15px;text-decoration:none;font-size:15px;margin-right:8px}@media(prefers-color-scheme:dark){:root{--bg:#151e28;--paper:#1c2833;--ink:#e6edf4;--muted:#a6b3c1;--line:#374654;--accent:#70d4c0}.btn{color:#122622}}@media(max-width:600px){main{padding:18px 18px 48px}h1{font-size:29px}body{font-size:16px}td,th{font-size:14px}}
-</style></head><body><main><nav><a href="index.html">← 返回课程</a><a href="downloads.html">实验程序下载</a></nav><h1>开课前：这套教材怎样学习</h1><p>这是面向已有编程经验、初次接触大模型智能体开发的中文工程教程。目标是理解模型与应用之间的边界，并能自己设计和开发智能体运行程序。</p>
-<h2>一、学习范围</h2><p>主线假定你已经了解普通编程、HTTP 接口、JSON 和数据库，暂不学习 Gradio、网页界面或模型训练数学。我们将从模型如何选择工具开始，学习工具注册、执行循环、MCP、上下文管理、检索、权限、评估和企业架构。Python 语法只解释与本课程源码阅读相关的部分。</p>
-<h2>二、为什么实验使用 Python？</h2><p>智能体并不是 Python 专属技术。模型通常通过网络 API 接收消息、工具定义并返回调用请求，因此 Java、Python、TypeScript 等语言都能实现相同的流程。选择 Python 是为了让教学代码短一些，方便直接观察消息结构、工具调用、程序执行和结果回传。多数前期实验仅使用 Python 标准库，不需要安装大型智能体框架。</p><p>Java 更适合复用现有 Spring Boot 企业服务、认证、权限、事务与部署基础设施。理解机制后，可以把 Python 实验中的模型客户端换成 Java HTTP 客户端或 Spring AI，把工具处理函数换成 Java Service，把字典换成类型明确的对象。企业工程也可以采用 Java 业务服务与 Python 智能体通过 MCP 协作的方式；不要求把现有项目重写为 Python。</p>
-<table><thead><tr><th>课程中的 Python</th><th>Java 开发者可以怎样理解</th></tr></thead><tbody><tr><td>def / class / self</td><td>方法定义、类及实例对象，self 类似 this。</td></tr><tr><td>dict / list / None</td><td>Map、List、null，字典可以直接转换为 JSON。</td></tr><tr><td>函数作为参数</td><td>函数式接口或依赖注入；测试时可替换网络调用函数。</td></tr><tr><td>**args</td><td>按参数名称展开字典，不是任意执行代码。</td></tr><tr><td>@mcp.tool()</td><td>装饰器用于登记工具，可类比注解注册机制，但语法及执行机制不同。</td></tr><tr><td>async / await</td><td>异步等待；不是让模型绕过程序自行执行。</td></tr></tbody></table>
-<p>每章“本章程序怎么读”直接引用实际源码并解释它做什么、为什么这样写。你不需要先学习整套 Python 语法，也不用把代码背下来。先理解业务和模型的分工，再理解执行步骤，最后尝试修改。</p>
-<h2>三、一次性准备实验环境</h2><div class="panel"><p>安装 Python 3.11 或更高版本，确认终端能执行：</p><pre>python --version</pre><p class="muted">Windows 如果找不到 python，可以试 py -3 --version；macOS/Linux 可使用 python3 --version。以下示例统一写 python，需要时替换成你的实际命令。</p><p><a class="btn" href="downloads.html">下载完整实验包</a></p><p>解压 ZIP，将终端切换到解压目录。所有实验文件保持在同一目录，不需要移动其中的文件。若通过 Git 克隆仓库，请先执行 cd labs。课程正文中的命令均以这个目录为起点。</p><pre>python step_by_step.py local</pre><p>这个命令验证本地虚构订单数据，正常时显示 A100 已付款、未发货，不请求模型。</p></div>
-<h2>四、从第二章开始配置真实模型</h2><p>使用你已获得授权的模型接口。需要四个值：接口格式、基础地址、模型完整名称、访问密钥。第二至第四章用 Chat Completions 格式做对照实验；第五章可改用 Responses 或 Claude Messages 格式。模型必须实际支持相应功能，第三方兼容接口不保证支持所有字段。</p><h3>Windows PowerShell 7.2+</h3><pre>$env:AGENT_API_FORMAT = "chat"
-$env:AGENT_BASE_URL = "https://api.openai.com/v1"
-$env:AGENT_MODEL = "替换成你有权限的模型"
-$env:AGENT_API_KEY = Read-Host "输入 API Key" -MaskInput</pre><h3>macOS / Linux（Bash）</h3><pre>export AGENT_API_FORMAT=chat
-export AGENT_BASE_URL=https://api.openai.com/v1
-export AGENT_MODEL="替换成你有权限的模型"
-read -rs AGENT_API_KEY; export AGENT_API_KEY</pre><p>地址与模型都换成供应商的实际配置，不要将占位符原样运行。基础地址通常以 /v1 结尾，不要附加完整 /chat/completions 路径。旧版 PowerShell 可通过系统环境变量设置密钥。密钥只在本地使用，不填写到网页、源码、学习笔记或 GitHub。</p><p>如果接口只支持 max_tokens，根据供应商文档设置 AGENT_CHAT_LEGACY_MAX_TOKENS=1。401 检查密钥，403 检查权限，404 检查地址与模型，400 检查格式与支持的字段，429 检查配额与限流。真实请求可能收费；默认轮数和调用次数有限，但不是金额上限。</p>
-<h2>五、学习方法与当前边界</h2><p>按章节阅读原理，阅读对应代码，运行实验，观察真实返回并记录问题。没有固定的逐课选择题，也不要求把所有进阶知识在第一遍学透。第 9、11 章主要安排架构设计练习。</p><p>当前教材主线可从第一章开始学习。现代 MCP 代码依据其 SDK 文档编写，实际依赖安装及接口联调仍需验证；完整 Java 企业工程、真实生产部署与真实模型评估尚未完成。离线单元测试用于验证确定性程序，不能证明模型每次都选得准。遇到失败时保留错误与实际运行记录，不要将教学中的预期结果当成实测结果。</p><p><a class="btn" href="index.html#chapter-1">开始第一章</a> <a href="downloads.html">实验程序下载中心</a></p></main></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>快速开始与环境配置 · AI Agent 工程实验室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="top-links">
+      <nav>
+        <a href="index.html">← 进入主线课程</a>
+        <a href="downloads.html">实验源码与下载中心</a>
+        <a href="reference.html">权威协议与术语速查</a>
+      </nav>
+      <a class="btn primary" href="index.html#chapter-1">从第 1 章开始学习 →</a>
+    </header>
+
+    <h1>快速开始：如何高效学透这套 Agent 课程</h1>
+    <p class="lead">本课程专为<strong>具备基础编程经验、用过大模型进行日常开发或调过聊天 API，但从未系统构建过 AI Agent</strong> 的开发者设计。我们摒弃晦涩概念堆砌与黑盒框架调包，用纯标准库 Python 分步拆解现代智能体的全部核心机制。</p>
+
+    <div class="bridge-grid">
+      <div class="card">
+        <div class="card-title">✨ 零门槛分步启动（无需 API Key）</div>
+        <p style="margin:0;font-size:14.5px">全套 8 组实验均内置<strong>离线协议回放与确定性模拟模式</strong>。哪怕手头暂时没有配置大模型密钥，也能立刻运行每一个 Python 脚本，逐步看清 JSON 报文、SQLite 查询、RBAC 拦截与评测打分！</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔌 无缝切换真实大模型（三大协议）</div>
+        <p style="margin:0;font-size:14.5px">只要在本地终端设置 4 个环境变量，同一套教学代码即可直接请求真实的 OpenAI、Anthropic Claude 或任意兼容接口（如 DeepSeek、通义千问、vLLM 等），亲眼验证真实模型的工具选择表现。</p>
+      </div>
+    </div>
+
+    <div class="callout tip" style="margin-bottom:24px">
+      <div class="callout-title">🧭 给工程师的定心丸：学 Agent 需要啃数学公式和算法吗？</div>
+      <p><strong>完全不需要！零高数、零线性代数、零算法竞赛门槛！</strong><br>
+      做 AI Agent 应用与后端工程，95% 考验的是你原本就熟悉的<strong>软件工程基本功</strong>（接口 JSON 规范、for 循环控制流、权限隔离、数据库事务防重与异常测试）。凡是涉及模型内部推理算法或向量相似度计算的工作，生产环境里全由大模型 API 和向量数据库底层自动包办——本教材在每一章开头都专门标出了<strong>「✅ 工程实战必会」</strong>与<strong>「🪶 放心跳过不用死磕」</strong>，帮你把精力 100% 花在刀刃上。</p>
+    </div>
+
+    <h2>一、四大阶段 · 10 章学习路线图</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>学习阶段</th><th>章节范围</th><th>你将亲手实现的工程能力</th><th>配套分步实验</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>第一阶段：认知跃迁</strong></td>
+            <td>第 1 – 2 章</td>
+            <td>分清 LLM API、Workflow 与 Agent 的控制权边界；编写严密的 JSON Schema 工具契约并掌控 <code>tool_choice</code></td>
+            <td><code>lab01_llm_vs_agent.py</code><br><code>lab02_tool_schema.py</code></td>
+          </tr>
+          <tr>
+            <td><strong>第二阶段：核心机制</strong></td>
+            <td>第 3 – 4 章</td>
+            <td>实现四层错误防御注册表、<code>tool_call_id</code> 消息闭环、多轮 ReAct 循环与跨厂商协议适配器</td>
+            <td><code>lab03_tool_execution.py</code><br><code>lab04_agent_loop.py</code></td>
+          </tr>
+          <tr>
+            <td><strong>第三阶段：连接与扩展</strong></td>
+            <td>第 5 – 7 章</td>
+            <td>构建多租户隔离、RBAC 权限网关、SHA-256 事务幂等、HITL 审批流、MCP 双链路桥接与配对裁剪 + RAG</td>
+            <td><code>lab05_enterprise_safety.py</code><br><code>lab06_mcp_bridge.py</code><br><code>lab07_context_rag.py</code></td>
+          </tr>
+          <tr>
+            <td><strong>第四阶段：落地与评估</strong></td>
+            <td>第 8 – 10 章</td>
+            <td>掌握五大编排与多智能体模式、全链路 Trace 追踪、五维回归评测集（Eval）及 LangGraph / Spring AI 映射</td>
+            <td><code>lab08_eval_harness.py</code><br><code>test_labs.py</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>二、为什么教学代码选用 Python 标准库？（给其他语言开发者的速查表）</h2>
+    <p>AI Agent 绝不是 Python 专属技术——无论你用 Java、Go、TypeScript 还是 Python，底层都是通过 HTTPS 收发 JSON 报文并调度本地业务函数。课程选用 Python 3.11+ 标准库是为了<strong>消除繁琐的样板代码与第三方依赖冲突</strong>，让你一眼看穿协议本质。如果你平时主写 Java / TS，只需对照下表即可无障碍阅读全部实验源码：</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>实验中的 Python 写法</th><th>等价的 Java / TypeScript 概念理解</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>@dataclass(frozen=True)</code></td><td>不可变数据载体，等价于 Java 16+ 的 <code>record</code> 或 TS 的 <code>readonly interface</code>。</td></tr>
+          <tr><td><code>dict[str, Any]</code> / <code>list[dict]</code> / <code>None</code></td><td>对应 <code>Map&lt;String, Object&gt;</code>、<code>List&lt;Map&gt;</code> 与 <code>null</code>，可直接序列化为 JSON。</td></tr>
+          <tr><td><code>Callable[..., dict]</code> 函数作为参数传递</td><td>函数式接口 / 依赖注入（如 <code>Function&lt;Req, Resp&gt;</code>），方便在离线测试与真实请求间切换。</td></tr>
+          <tr><td><code>tool.handler(**parsed_args)</code></td><td>将已通过白名单与类型校验的字典按参数名展开调用，<strong>绝不是</strong>任意代码执行（<code>eval</code>）。</td></tr>
+          <tr><td><code>with self.db:</code></td><td>SQLite 数据库原子事务上下文：正常退出自动 <code>COMMIT</code>，抛异常自动 <code>ROLLBACK</code>（类似 <code>@Transactional</code>）。</td></tr>
+          <tr><td><code>async def</code> / <code>await</code></td><td>异步协程 I/O 等待（与 TS <code>async/await</code> 一致），用于第 6 章管理 MCP 子进程管道通信。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>三、30 秒准备本地实验环境</h2>
+    <div class="card">
+      <p>1. 确保本机已安装 <strong>Python 3.11 或更高版本</strong>。克隆本仓库或从 <a href="downloads.html">下载中心</a> 获取完整实验 ZIP 包并进入 <code>labs/</code> 目录：</p>
+      <div class="codebox">
+        <div class="codehead"><span>终端验证命令（无需任何第三方库或 API Key）</span></div>
+        <pre>python --version
+cd labs
+python lab01_llm_vs_agent.py
+python -m unittest discover -v</pre>
+      </div>
+      <p style="margin:0;font-size:14px;color:var(--muted)">提示：Windows 若提示找不到 <code>python</code>，可尝试 <code>py -3</code>；macOS / Linux 通常使用 <code>python3</code>。</p>
+    </div>
+
+    <h2>四、交互式生成器：配置你的真实大模型 API（可选）</h2>
+    <p>当你想在实验中加入 <code>--live</code> 或去掉 <code>--mock</code> 连接真实大模型时，在下方选择你的接口类型并填入模型名，即可生成安全的本地终端环境变量命令（<strong>纯浏览器本地拼接，请勿在任何网页输入框填写你的真实 API Key</strong>）：</p>
+
+    <div class="card">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:14px">
+        <label style="font-size:13.5px;font-weight:650">
+          1. 选择服务商 / 协议预设
+          <select id="presetSelect" style="width:100%;margin-top:5px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
+            <option value="openai_chat">OpenAI Chat Completions (/chat/completions)</option>
+            <option value="openai_resp">OpenAI Responses API (/responses)</option>
+            <option value="anthropic">Anthropic Claude Messages (/messages)</option>
+            <option value="compat_legacy">兼容接口 (DeepSeek / 通义 / 本地 vLLM 等)</option>
+          </select>
+        </label>
+        <label style="font-size:13.5px;font-weight:650">
+          2. API Base URL（通常以 /v1 结尾）
+          <input id="baseInput" type="text" value="https://api.openai.com/v1" style="width:100%;margin-top:5px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
+        </label>
+        <label style="font-size:13.5px;font-weight:650">
+          3. 支持工具调用的模型名称
+          <input id="modelInput" type="text" value="gpt-4o-mini" style="width:100%;margin-top:5px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:var(--bg);color:var(--ink)">
+        </label>
+      </div>
+
+      <div class="codebox">
+        <div class="codehead"><span>Windows PowerShell 7.2+（掩码安全输入 Key）</span><button id="copyPs">复制</button></div>
+        <pre id="psOut"></pre>
+      </div>
+      <div class="codebox">
+        <div class="codehead"><span>macOS / Linux (Bash / Zsh)</span><button id="copyBash">复制</button></div>
+        <pre id="bashOut"></pre>
+      </div>
+      <p style="margin:8px 0 0;font-size:13.5px;color:var(--muted)">排错速查：<code>HTTP 401</code> 检查密钥是否正确；<code>HTTP 403</code> 检查账号是否有该模型权限；<code>HTTP 404</code> 检查 Base URL 是否多写了具体路径或模型名拼写错误；<code>HTTP 400</code> 若提示不支持 <code>max_completion_tokens</code>，开启 <code>AGENT_CHAT_LEGACY_MAX_TOKENS=1</code> 即可。</p>
+    </div>
+
+    <div class="pager">
+      <a class="btn" href="downloads.html">↓ 前往下载实验源码包</a>
+      <a class="btn primary" href="index.html#chapter-1">准备就绪，开始学习第 1 章 →</a>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    const savedTheme = localStorage.getItem("agentlab-theme");
+    if (savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+
+    const presets = {
+      openai_chat: { fmt: "chat", base: "https://api.openai.com/v1", model: "gpt-4o-mini", legacy: false },
+      openai_resp: { fmt: "responses", base: "https://api.openai.com/v1", model: "gpt-4o-mini", legacy: false },
+      anthropic:   { fmt: "messages", base: "https://api.anthropic.com/v1", model: "claude-sonnet-4-20250514", legacy: false },
+      compat_legacy: { fmt: "chat", base: "https://api.deepseek.com/v1", model: "deepseek-chat", legacy: true }
+    };
+
+    const presetEl = document.getElementById("presetSelect");
+    const baseEl = document.getElementById("baseInput");
+    const modelEl = document.getElementById("modelInput");
+    const psOut = document.getElementById("psOut");
+    const bashOut = document.getElementById("bashOut");
+
+    function updateSnippets() {
+      const p = presets[presetEl.value];
+      const base = baseEl.value.trim() || p.base;
+      const model = modelEl.value.trim() || p.model;
+      const psLines = [
+        `$env:AGENT_API_FORMAT = "${p.fmt}"`,
+        `$env:AGENT_BASE_URL = "${base}"`,
+        `$env:AGENT_MODEL = "${model}"`,
+        ...(p.legacy ? [`$env:AGENT_CHAT_LEGACY_MAX_TOKENS = "1"`] : []),
+        `$env:AGENT_API_KEY = Read-Host "输入 API Key (不回显)" -MaskInput`,
+        `python lab04_agent_loop.py`
+      ];
+      const bashLines = [
+        `export AGENT_API_FORMAT="${p.fmt}"`,
+        `export AGENT_BASE_URL="${base}"`,
+        `export AGENT_MODEL="${model}"`,
+        ...(p.legacy ? [`export AGENT_CHAT_LEGACY_MAX_TOKENS="1"`] : []),
+        `read -rs AGENT_API_KEY && export AGENT_API_KEY`,
+        `python3 lab04_agent_loop.py`
+      ];
+      psOut.textContent = psLines.join("\n");
+      bashOut.textContent = bashLines.join("\n");
+    }
+
+    presetEl.onchange = () => {
+      const p = presets[presetEl.value];
+      baseEl.value = p.base;
+      modelEl.value = p.model;
+      updateSnippets();
+    };
+    baseEl.oninput = updateSnippets;
+    modelEl.oninput = updateSnippets;
+
+    document.getElementById("copyPs").onclick = () => navigator.clipboard.writeText(psOut.textContent);
+    document.getElementById("copyBash").onclick = () => navigator.clipboard.writeText(bashOut.textContent);
+    updateSnippets();
+  })();
+  </script>
+</body>
+</html>
