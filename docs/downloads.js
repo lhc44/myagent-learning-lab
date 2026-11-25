@@ -39,8 +39,9 @@ const out=new Uint8Array(offset+centralSize+22);let pos=0;for(const b of [...loc
 function save(name,bytes,type){const url=URL.createObjectURL(new Blob([bytes],{type})),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function pack(names,id){const entries=[["README.txt",readme],...names.map(n=>{if(typeof files[n]!=="string")throw Error("文件缺失："+n);return[n,files[n]]})];save("agent-lab-"+id+".zip",zipBytes(entries),"application/zip")}
 function el(tag,cls,text){const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=text;return x}
-const root=document.getElementById("groups");document.getElementById("count").textContent=Object.keys(files).length+" 个 Python 文件 · ZIP 无需登录或安装下载工具";
+const root=document.getElementById("groups");document.getElementById("count").textContent=Object.keys(files).length+" 个 Python 文件 · 页面内直接生成 ZIP";
 document.getElementById("all").onclick=()=>pack(Object.keys(files),"all");
 for(const group of groups){const section=el("section","panel");section.id=group.id;const h=el("div","heading");h.append(el("h2","",group.title));const b=el("button","btn","下载本组 ZIP");b.onclick=()=>pack(group.names,group.id);h.append(b);section.append(h,el("p","muted",group.note));for(const name of group.names){const row=el("div","file");const info=el("div");info.append(el("strong","",name),el("p","muted",descriptions[name]));const btn=el("button","btn","下载 .py");btn.onclick=()=>save(name,files[name],"text/plain;charset=utf-8");row.append(info,btn);section.append(row)}root.append(section)}
+const from=new URLSearchParams(location.search).get("from");if(/^([1-9]|10|11)$/.test(from||"")){const back=document.querySelector("nav a");if(back)back.href="index.html#chapter-"+from}
 if(location.hash){const target=document.getElementById(location.hash.slice(1));if(target)target.scrollIntoView()}
 })();
