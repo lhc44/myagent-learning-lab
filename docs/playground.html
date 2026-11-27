@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>协议 JSON 生成器与步进实验台 · AI Agent 工程实验室</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .pg-shell { max-width: 1220px; margin: 0 auto; padding: 24px 24px 72px; }
+    .pg-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 20px 0 18px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+    .pg-tab { border: 1px solid var(--line); background: var(--surface); color: var(--ink-secondary); border-radius: 9px; padding: 9px 16px; font-size: 14.5px; font-weight: 700; }
+    .pg-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    html[data-theme="dark"] .pg-tab.active { color: #071917; }
+    .pg-grid { display: grid; grid-template-columns: minmax(320px, 430px) minmax(0, 1fr); gap: 20px; align-items: start; }
+    .pg-panel { display: none; }
+    .pg-panel.active { display: block; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; font-weight: 700; color: var(--ink-secondary); margin-bottom: 5px; }
+    .field input[type="text"], .field input[type="password"], .field select, .field textarea {
+      width: 100%; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--line);
+      background: var(--bg); color: var(--ink); font-size: 14px;
+    }
+    .check-row { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13.5px; }
+    .check-row label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ink); cursor: pointer; margin: 0; }
+    .preset-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .pill-btn { border: 1px solid var(--line); background: var(--surface-alt); color: var(--ink-secondary); border-radius: 99px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
+    .pill-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .action-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .diag-box { margin-top: 12px; padding: 12px 15px; border-radius: 9px; font-size: 13.5px; line-height: 1.65; border: 1px solid var(--line); background: var(--surface-alt); }
+    .diag-ok { background: var(--accent-soft); border-color: var(--accent-border); }
+    .diag-warn { background: var(--amber-bg); border-color: var(--amber-border); }
+    .param-row { display: grid; grid-template-columns: 1fr 105px 1.2fr 60px 34px; gap: 6px; align-items: center; margin-bottom: 8px; }
+    .param-row input, .param-row select { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font-size: 13px; }
+    @media (max-width: 920px) {
+      .pg-grid { grid-template-columns: 1fr; }
+      .param-row { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="pg-shell">
+    <header class="top-links">
+      <nav>
+        <a href="index.html">← 返回主线课程</a>
+        <a href="start.html">快速开始</a>
+        <a href="downloads.html">实验下载</a>
+        <a href="reference.html">权威速查手册</a>
+      </nav>
+      <button class="btn" id="themeBtn" style="padding:5px 10px;font-size:12.5px">◐ 切换主题</button>
+    </header>
+
+    <h1 style="margin-bottom:8px">🧪 协议 JSON 生成器与步进实验台</h1>
+    <p class="lead" style="margin-bottom:14px">通过勾选自然生成标准 <strong>Tool Call / MCP (JSON-RPC 2.0) / JSON Schema</strong> 报文，既可一键复制进 <strong>Postman / PowerShell</strong> 逐步测试，也可直接使用内置发包器在浏览器里走完两轮 Agent 闭环。</p>
+
+    <div class="pg-tabs" role="tablist">
+      <button class="pg-tab active" data-tab="toolcall">1. Tool Call 协议生成器 &amp; 内置发包台</button>
+      <button class="pg-tab" data-tab="mcp">2. MCP (JSON-RPC 2.0) 报文生成与速查</button>
+      <button class="pg-tab" data-tab="schema">3. 可视化 JSON Schema 工具构建器</button>
+    </div>
+
+    <!-- ==================== TAB 1: TOOL CALL ==================== -->
+    <section class="pg-panel active" id="panel-toolcall">
+      <div class="pg-grid">
+        <div class="card">
+          <div class="card-title">⚙️ 第一步：自然勾选配置（实时生成右侧 JSON）</div>
+
+          <div class="field">
+            <label>协议格式（切换即可对照三大厂商字段差异）</label>
+            <select id="tcFormat">
+              <option value="chat">OpenAI Chat Completions (/chat/completions)</option>
+              <option value="responses">OpenAI Responses API (/responses)</option>
+              <option value="messages">Anthropic Claude Messages (/messages)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>实验轮次（一步一步看 messages 怎么变化）</label>
+            <select id="tcRound">
+              <option value="round1">第 1 轮：发起提问 + 挂载工具说明书</option>
+              <option value="round2">第 2 轮：带上 tool_call_id 回传查库结果</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>勾选要挂载的工具（Tools）</label>
+            <div class="check-row">
+              <label><input type="checkbox" id="toolOrder" checked> query_order (查订单)</label>
+              <label><input type="checkbox" id="toolPolicy" checked> read_refund_policy (查制度)</label>
+              <label><input type="checkbox" id="toolRefund"> submit_refund_ticket (提审批单)</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>工具选择策略（tool_choice）与严格模式</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center">
+              <select id="tcChoice">
+                <option value="auto">auto（模型自主决定）</option>
+                <option value="required">required（强制调工具）</option>
+                <option value="none">none（禁止调工具）</option>
+              </select>
+              <div class="check-row">
+                <label><input type="checkbox" id="tcStrict"> strict: true</label>
+                <label><input type="checkbox" id="tcLegacy" checked> max_tokens</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>模型名称（model）</label>
+            <input type="text" id="tcModel" value="gpt-4o-mini">
+          </div>
+
+          <div class="field">
+            <label>用户提问（user）</label>
+            <textarea id="tcQuestion" rows="2">请查询订单 A100 的付款和发货状态。</textarea>
+            <div class="preset-pills">
+              <button class="pill-btn" data-q="请查询订单 A100 的付款和发货状态。">查 A100</button>
+              <button class="pill-btn" data-q="订单 A100 现在能不能申请退款？">查单+退款资格</button>
+              <button class="pill-btn" data-q="查一下不存在的订单 Z999。">查无此单 Z999</button>
+              <button class="pill-btn" data-q="用一句话解释什么是 JSON？">闲聊测试</button>
+            </div>
+          </div>
+
+          <div id="round2Box" style="display:none;padding:12px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--line);margin-bottom:14px">
+            <div class="card-title" style="margin-bottom:8px">🔁 第 2 轮工具回传参数</div>
+            <div class="field" style="margin-bottom:8px">
+              <label>模型第 1 轮给的调用编号（call_id）</label>
+              <input type="text" id="tcCallId" value="call_a100_01">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>本地查库返回的 JSON 结果</label>
+              <textarea id="tcToolResult" rows="2">{"found": true, "order_id": "A100", "amount_yuan": 299, "payment_status": "paid", "shipping_status": "pending"}</textarea>
+            </div>
+          </div>
+
+          <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+          <div class="card-title">🚀 内置 Mini Postman（可选：直接在此发包测试）</div>
+          <div class="field">
+            <label>API Base URL（支持 http:// 或 https://）</label>
+            <input type="text" id="liveBase" placeholder="例如 https://api.deepseek.com/v1">
+          </div>
+          <div class="field">
+            <label>API Key（仅在当前浏览器本地发请求，不保存不上传）</label>
+            <input type="password" id="liveKey" placeholder="sk-...">
+          </div>
+          <div class="action-row">
+            <button class="btn primary" id="sendLiveBtn">▶ 发送当前 JSON 请求</button>
+            <button class="btn" id="simNextRoundBtn" style="display:none">⚡ 模拟本地查库 → 生成第 2 轮</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="card-title" style="margin:0" id="tcEndpointBadge">POST /chat/completions · 请求体 JSON</div>
+              <div class="action-row" style="margin:0">
+                <button class="btn primary" id="copyTcJson">复制 JSON (给 Postman)</button>
+                <button class="btn" id="copyTcPs">复制 PowerShell 命令</button>
+                <button class="btn" id="copyTcCurl">复制 curl 命令</button>
+              </div>
+            </div>
+            <div class="codebox" style="margin-top:12px">
+              <div class="codehead"><span id="tcJsonTitle">标准请求报文（可直接粘贴到 Postman Body -> raw -> JSON）</span></div>
+              <pre id="tcJsonPreview"></pre>
+            </div>
+            <div class="diag-box" id="tcFieldNotes"></div>
+          </div>
+
+          <div class="card" id="liveRespCard" style="display:none">
+            <div class="card-title">📬 实时响应结果与自动诊断</div>
+            <div class="diag-box" id="liveDiag"></div>
+            <div class="codebox" style="margin-top:10px">
+              <div class="codehead"><span>服务端原始返回 JSON</span><button id="copyRespBtn">复制响应</button></div>
+              <pre id="liveRespPre" style="max-height:380px"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: MCP JSON-RPC 2.0 ==================== -->
+    <section class="pg-panel" id="panel-mcp">
+      <div class="pg-grid">
+        <div class="card">
+          <div class="card-title">🔌 选择 MCP 交互步骤与原语</div>
+          <div class="field">
+            <label>选择要查看 / 生成的 MCP 方法</label>
+            <select id="mcpMethod">
+              <option value="initialize">0. initialize（握手协商能力）+ initialized 通知</option>
+              <option value="tools/list">1A. Tools 原语 · tools/list（发现可用工具）</option>
+              <option value="tools/call">1B. Tools 原语 · tools/call（执行查订单）</option>
+              <option value="resources/list">2A. Resources 原语 · resources/list（列出只读资源）</option>
+              <option value="resources/read">2B. Resources 原语 · resources/read（按 URI 读制度）</option>
+              <option value="prompts/list">3A. Prompts 原语 · prompts/list（列出快捷模板）</option>
+              <option value="prompts/get">3B. Prompts 原语 · prompts/get（渲染专家提示词）</option>
+              <option value="error">4. JSON-RPC 标准错误响应（Method not found）</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>请求关联编号（JSON-RPC id，必须非空）</label>
+            <input type="text" id="mcpId" value="1">
+          </div>
+
+          <div id="mcpDynamicInputs"></div>
+
+          <div class="diag-box diag-ok" id="mcpExplain" style="margin-top:14px"></div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="card-title" style="margin:0">📤 客户端发送的 JSON-RPC 2.0 请求包（可贴入 Postman 测试远程 MCP）</div>
+              <button class="btn primary" id="copyMcpReq">复制 Request JSON</button>
+            </div>
+            <div class="codebox" style="margin-top:10px">
+              <pre id="mcpReqPre"></pre>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="card-title" style="margin:0">📥 MCP Server 返回的对应响应包（相同 id 对号入座）</div>
+              <button class="btn" id="copyMcpResp">复制 Response JSON</button>
+            </div>
+            <div class="codebox" style="margin-top:10px">
+              <pre id="mcpRespPre"></pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">🐍 对应的 Python FastMCP 服务端实现代码</div>
+            <div class="codebox" style="margin-top:10px">
+              <pre id="mcpPyPre"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: SCHEMA BUILDER ==================== -->
+    <section class="pg-panel" id="panel-schema">
+      <div class="pg-grid">
+        <div class="card">
+          <div class="card-title">📐 可视化定义你的业务工具</div>
+          <div class="field">
+            <label>工具名称（英文下划线，如 query_invoice）</label>
+            <input type="text" id="sbName" value="query_order">
+          </div>
+          <div class="field">
+            <label>工具用途描述（description —— 模型选工具的核心依据！）</label>
+            <textarea id="sbDesc" rows="2">根据订单编号查询实时付款和发货状态（只读）。缺少订单号时请先询问用户。</textarea>
+          </div>
+          <div class="field">
+            <label>输出目标格式（一键切换不同规范）</label>
+            <select id="sbTarget">
+              <option value="openai_chat">OpenAI Chat Completions (tools[])</option>
+              <option value="openai_resp">OpenAI Responses API (平铺格式)</option>
+              <option value="claude">Anthropic Claude (input_schema)</option>
+              <option value="mcp">MCP Tool Definition (inputSchema)</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="check-row">
+              <label><input type="checkbox" id="sbStrict" checked> 开启 strict / additionalProperties: false</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>参数列表（名称 / 类型 / 中文说明 / 必填）</label>
+            <div id="sbParamsList"></div>
+            <button class="btn" id="sbAddParam" style="margin-top:6px">+ 添加一个参数字段</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="card-title" style="margin:0">✨ 实时生成的标准工具定义 JSON</div>
+            <button class="btn primary" id="copySbJson">复制工具定义 JSON</button>
+          </div>
+          <div class="codebox" style="margin-top:12px">
+            <pre id="sbOutPre"></pre>
+          </div>
+          <div class="diag-box diag-ok" style="margin-top:12px">
+            <strong>💡 避坑速查：</strong>编号、手机号、邮编等不做加减乘除的字段一律选 <code>string</code>（防止前导零丢失）；取值固定时用 <code>enum</code> 枚举锁死；切勿把 <code>tenant_id</code> / <code>user_id</code> 放进这里，应由后端从登录态注入！
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="playground.js"></script>
+</body>
+</html>

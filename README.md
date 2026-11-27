@@ -7,6 +7,7 @@
 ## 在线交互式学习网站
 
 - **主线交互式课程站**：[https://lhc44.github.io/myagent-learning-lab/](https://lhc44.github.io/myagent-learning-lab/)（本地可直接用浏览器打开 [`docs/index.html`](docs/index.html)）
+- **🧪 协议 JSON 生成器与步进实验台**：[`docs/playground.html`](docs/playground.html)（自然点选生成 Tool Call / MCP JSON-RPC 2.0 / JSON Schema，支持一键复制进 Postman 或内置发包两轮实验）
 - **快速开始与 API 配置生成器**：[`docs/start.html`](docs/start.html)
 - **分步实验源码在线预览与 ZIP 下载中心**：[`docs/downloads.html`](docs/downloads.html)
 - **权威协议对照与术语速查手册**：[`docs/reference.html`](docs/reference.html)
