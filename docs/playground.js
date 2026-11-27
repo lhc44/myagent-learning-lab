@@ -81,6 +81,27 @@
   };
 
   let lastToolCallFromLive = null;
+  let customTools = []; // 用户在 Tab 3 自定义并加入实验台的工具列表
+
+  function renderCustomToolCheckboxes() {
+    const wrap = $("customToolsWrap");
+    wrap.replaceChildren();
+    customTools.forEach((ct, idx) => {
+      const lbl = document.createElement("label");
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = ct.enabled;
+      cb.onchange = () => { ct.enabled = cb.checked; renderToolCall(); };
+      const del = document.createElement("button");
+      del.className = "pill-btn";
+      del.textContent = "×";
+      del.title = "移除自定义工具";
+      del.style.marginLeft = "4px";
+      del.onclick = e => { e.preventDefault(); customTools.splice(idx, 1); renderCustomToolCheckboxes(); renderToolCall(); };
+      lbl.append(cb, document.createTextNode(" " + ct.name + " (自定义)"), del);
+      wrap.append(lbl);
+    });
+  }
 
   function buildToolCallPayload() {
     const fmt = $("tcFormat").value;
@@ -90,13 +111,18 @@
     const choice = $("tcChoice").value;
     const strict = $("tcStrict").checked;
     const legacy = $("tcLegacy").checked;
+    const callName = $("tcCallName").value.trim() || "query_order";
     const callId = $("tcCallId").value.trim() || "call_a100_01";
+    const callArgs = $("tcCallArgs").value.trim() || '{"order_id":"A100"}';
     const toolResult = $("tcToolResult").value.trim() || '{"found":true,"order_id":"A100","payment_status":"paid","shipping_status":"pending"}';
 
     const selected = [];
     if ($("toolOrder").checked) selected.push(TOOL_CATALOG.query_order);
     if ($("toolPolicy").checked) selected.push(TOOL_CATALOG.read_refund_policy);
     if ($("toolRefund").checked) selected.push(TOOL_CATALOG.submit_refund_ticket);
+    customTools.forEach(ct => {
+      if (ct.enabled) selected.push({ name: ct.name, description: ct.description, parameters: ct.parameters });
+    });
 
     const sysText = "你是严谨的企业订单助手。查询订单或制度请调用工具，严禁编造实时状态。";
     let endpoint = "/chat/completions";
@@ -113,7 +139,7 @@
         msgs.push({
           role: "assistant",
           content: null,
-          tool_calls: [{ id: callId, type: "function", function: { name: "query_order", arguments: '{"order_id":"A100"}' } }]
+          tool_calls: [{ id: callId, type: "function", function: { name: callName, arguments: callArgs } }]
         });
         msgs.push({ role: "tool", tool_call_id: callId, content: toolResult });
       }
@@ -134,7 +160,7 @@
       endpoint = "/responses";
       const input = [{ role: "user", content: question }];
       if (round === "round2") {
-        input.push({ type: "function_call", call_id: callId, name: "query_order", arguments: '{"order_id":"A100"}' });
+        input.push({ type: "function_call", call_id: callId, name: callName, arguments: callArgs });
         input.push({ type: "function_call_output", call_id: callId, output: toolResult });
       }
       body = { model, instructions: sysText, input, max_output_tokens: 1024, store: false };
@@ -147,7 +173,9 @@
       endpoint = "/messages";
       const msgs = [{ role: "user", content: question }];
       if (round === "round2") {
-        msgs.push({ role: "assistant", content: [{ type: "tool_use", id: callId, name: "query_order", input: { order_id: "A100" } }] });
+        let parsedCallArgs = {};
+        try { parsedCallArgs = JSON.parse(callArgs); } catch {}
+        msgs.push({ role: "assistant", content: [{ type: "tool_use", id: callId, name: callName, input: parsedCallArgs }] });
         msgs.push({ role: "user", content: [{ type: "tool_result", tool_use_id: callId, content: toolResult }] });
       }
       body = { model, system: sysText, messages: msgs, max_tokens: 1024 };
@@ -172,7 +200,7 @@
     $("tcFieldNotes").innerHTML = notes;
   }
 
-  ["tcFormat", "tcRound", "toolOrder", "toolPolicy", "toolRefund", "tcChoice", "tcStrict", "tcLegacy", "tcModel", "tcQuestion", "tcCallId", "tcToolResult"]
+  ["tcFormat", "tcRound", "toolOrder", "toolPolicy", "toolRefund", "tcChoice", "tcStrict", "tcLegacy", "tcModel", "tcQuestion", "tcCallName", "tcCallId", "tcCallArgs", "tcToolResult"]
     .forEach(id => {
       $(id).addEventListener("input", renderToolCall);
       $(id).addEventListener("change", renderToolCall);
@@ -466,9 +494,130 @@
     $(id).addEventListener("input", updateSchemaOutput);
     $(id).addEventListener("change", updateSchemaOutput);
   });
+  $("addCustomToLab").onclick = () => {
+    const name = $("sbName").value.trim() || "my_tool";
+    const description = $("sbDesc").value.trim() || "自定义工具";
+    const strict = $("sbStrict").checked;
+    const properties = {};
+    const required = [];
+    sbParams.forEach(p => {
+      const k = p.name.trim();
+      if (!k) return;
+      if (p.type === "enum") {
+        const vals = p.desc.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+        properties[k] = { type: "string", enum: vals.length ? vals : ["option_a", "option_b"] };
+      } else {
+        properties[k] = { type: (!p.required && strict) ? [p.type, "null"] : p.type, description: p.desc };
+      }
+      if (p.required || strict) required.push(k);
+    });
+    const parameters = { type: "object", properties, required, ...(strict ? { additionalProperties: false } : {}) };
+    const existing = customTools.findIndex(x => x.name === name);
+    const entry = { name, description, parameters, enabled: true };
+    if (existing >= 0) customTools[existing] = entry;
+    else customTools.push(entry);
+    renderCustomToolCheckboxes();
+    renderToolCall();
+    // 自动切回 Tab 1 方便用户立刻看到效果
+    document.querySelector('.pg-tab[data-tab="toolcall"]').click();
+  };
+
   $("copySbJson").onclick = () => copyWithFeedback($("copySbJson"), $("sbOutPre").textContent);
 
-  // 初始化三个面板
+  // =========================================================================
+  // TAB 4: 响应 JSON 粘贴解析器
+  // =========================================================================
+  const SAMPLE_RESP = {
+    id: "resp_demo_001",
+    model: "hy4flash-free",
+    choices: [{
+      index: 0,
+      finish_reason: "stop",
+      message: {
+        role: "assistant",
+        content: "订单 A100 的付款状态为已付款，发货状态系统返回异常，暂无法确认。",
+        reasoning_content: "前面工具返回了付款状态 paid，但发货状态为异常文本，作为企业助手不应原样复述，应礼貌提示系统返回异常。"
+      }
+    }],
+    usage: {
+      prompt_tokens: 163,
+      completion_tokens: 302,
+      total_tokens: 465,
+      completion_tokens_details: { reasoning_tokens: 259 },
+      prompt_cache_hit_tokens: 0,
+      credit: 0,
+      original_credit: 0.02
+    }
+  };
+
+  function parseResponseJson() {
+    const raw = $("respInput").value.trim();
+    const box = $("respSummary");
+    if (!raw) {
+      box.className = "diag-box diag-warn";
+      box.textContent = "请先在左侧粘贴一段 JSON 响应内容。";
+      return;
+    }
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      box.className = "diag-box diag-warn";
+      box.textContent = "❌ JSON 解析失败：" + e.message + "（请检查是否复制完整）";
+      return;
+    }
+
+    const lines = [];
+    const model = data.model || "未标明";
+    const choice = data.choices?.[0];
+    const msg = choice?.message || {};
+    const finish = choice?.finish_reason || data.stop_reason || data.status || "未知";
+    const finishMap = {
+      stop: "正常答完（未再申请调工具）",
+      end_turn: "正常答完（Claude 结束轮次）",
+      tool_calls: "暂停等待你的代码执行工具并回传结果",
+      tool_use: "暂停等待你的代码执行工具（Claude）",
+      length: "⚠️ 触发 max_tokens 上限被截断！切勿执行半截参数",
+      content_filter: "⚠️ 触发安全审核拦截"
+    };
+
+    lines.push(`<li><strong>模型：</strong><code>${model}</code> ｜ <strong>停止原因：</strong><code>${finish}</code>（${finishMap[finish] || "其他状态"}）</li>`);
+
+    if (msg.tool_calls?.length) {
+      lines.push(`<li><strong>✅ 检测到原生工具调用（${msg.tool_calls.length} 项）：</strong>${msg.tool_calls.map(c => `<code>${c.function?.name}(${c.function?.arguments})</code> [id=${c.id}]`).join("，")}</li>`);
+    } else {
+      lines.push(`<li><strong>文本回复内容：</strong>${(msg.content || "（空）").slice(0, 140)}</li>`);
+    }
+
+    if (msg.reasoning_content) {
+      lines.push(`<li><strong>💭 包含内部思考过程 (reasoning_content)：</strong>共 ${msg.reasoning_content.length} 字（多轮拼接历史时建议只保留 content/tool_calls，不把思考草稿传回下轮）。</li>`);
+    }
+
+    const u = data.usage;
+    if (u) {
+      const pTok = u.prompt_tokens ?? u.input_tokens ?? 0;
+      const cTok = u.completion_tokens ?? u.output_tokens ?? 0;
+      const rTok = u.completion_tokens_details?.reasoning_tokens ?? u.completion_thinking_tokens ?? 0;
+      const cacheHit = u.prompt_cache_hit_tokens ?? u.prompt_tokens_details?.cached_tokens ?? u.cache_read_input_tokens ?? u.cached_tokens ?? 0;
+      const rPct = cTok ? Math.round((rTok / cTok) * 100) : 0;
+      const cPct = pTok ? Math.round((cacheHit / pTok) * 100) : 0;
+      lines.push(`<li><strong>📊 Token 账单拆解：</strong>输入 <code>${pTok}</code> + 输出 <code>${cTok}</code> = 总计 <code>${u.total_tokens ?? (pTok + cTok)}</code>；其中思考消耗 <code>${rTok}</code>（占输出 <strong>${rPct}%</strong>），输入缓存命中 <code>${cacheHit}</code>（命中率 <strong>${cPct}%</strong>）。</li>`);
+      if ("credit" in u || "original_credit" in u || "quota" in u) {
+        lines.push(`<li><strong>🏷️ 检测到中转网关私有计费字段：</strong><code>credit=${u.credit}</code>, <code>original_credit=${u.original_credit}</code>（非 OpenAI 标准字段，业务代码解析时不要强依赖）。</li>`);
+      }
+    }
+
+    box.className = "diag-box diag-ok";
+    box.innerHTML = "<ul class='obj-list' style='margin:0'>" + lines.join("") + "</ul>";
+  }
+
+  $("parseRespBtn").onclick = parseResponseJson;
+  $("loadSampleRespBtn").onclick = () => {
+    $("respInput").value = JSON.stringify(SAMPLE_RESP, null, 2);
+    parseResponseJson();
+  };
+
+  // 初始化四个面板
   renderToolCall();
   renderMcpDynamicInputs();
   renderMcp();

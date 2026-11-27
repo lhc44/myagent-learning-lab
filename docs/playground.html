@@ -55,7 +55,8 @@
     <div class="pg-tabs" role="tablist">
       <button class="pg-tab active" data-tab="toolcall">1. Tool Call 协议生成器 &amp; 内置发包台</button>
       <button class="pg-tab" data-tab="mcp">2. MCP (JSON-RPC 2.0) 报文生成与速查</button>
-      <button class="pg-tab" data-tab="schema">3. 可视化 JSON Schema 工具构建器</button>
+      <button class="pg-tab" data-tab="schema">3. 自定义 Tool 工具构建器</button>
+      <button class="pg-tab" data-tab="inspector">4. 响应 JSON 粘贴解析 &amp; 字段速查</button>
     </div>
 
     <!-- ==================== TAB 1: TOOL CALL ==================== -->
@@ -82,12 +83,13 @@
           </div>
 
           <div class="field">
-            <label>勾选要挂载的工具（Tools）</label>
-            <div class="check-row">
+            <label>勾选要挂载的工具（Tools · 支持去 Tab 3 添加自定义工具）</label>
+            <div class="check-row" id="tcToolList">
               <label><input type="checkbox" id="toolOrder" checked> query_order (查订单)</label>
               <label><input type="checkbox" id="toolPolicy" checked> read_refund_policy (查制度)</label>
               <label><input type="checkbox" id="toolRefund"> submit_refund_ticket (提审批单)</label>
             </div>
+            <div id="customToolsWrap" class="check-row" style="margin-top:6px"></div>
           </div>
 
           <div class="field">
@@ -123,12 +125,22 @@
 
           <div id="round2Box" style="display:none;padding:12px;border-radius:8px;background:var(--surface-alt);border:1px solid var(--line);margin-bottom:14px">
             <div class="card-title" style="margin-bottom:8px">🔁 第 2 轮工具回传参数</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="field" style="margin-bottom:8px">
+                <label>调用的工具名（name）</label>
+                <input type="text" id="tcCallName" value="query_order">
+              </div>
+              <div class="field" style="margin-bottom:8px">
+                <label>调用编号（call_id）</label>
+                <input type="text" id="tcCallId" value="call_a100_01">
+              </div>
+            </div>
             <div class="field" style="margin-bottom:8px">
-              <label>模型第 1 轮给的调用编号（call_id）</label>
-              <input type="text" id="tcCallId" value="call_a100_01">
+              <label>第 1 轮模型传的参数（arguments JSON）</label>
+              <input type="text" id="tcCallArgs" value='{"order_id":"A100"}'>
             </div>
             <div class="field" style="margin-bottom:0">
-              <label>本地查库返回的 JSON 结果</label>
+              <label>本地查库返回的 JSON 结果（可随便改内容测试模型反应！）</label>
               <textarea id="tcToolResult" rows="2">{"found": true, "order_id": "A100", "amount_yuan": 299, "payment_status": "paid", "shipping_status": "pending"}</textarea>
             </div>
           </div>
@@ -275,13 +287,59 @@
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
             <div class="card-title" style="margin:0">✨ 实时生成的标准工具定义 JSON</div>
-            <button class="btn primary" id="copySbJson">复制工具定义 JSON</button>
+            <div class="action-row" style="margin:0">
+              <button class="btn primary" id="addCustomToLab">➕ 加入 Tab 1 实验台使用</button>
+              <button class="btn" id="copySbJson">复制工具定义 JSON</button>
+            </div>
           </div>
           <div class="codebox" style="margin-top:12px">
             <pre id="sbOutPre"></pre>
           </div>
           <div class="diag-box diag-ok" style="margin-top:12px">
             <strong>💡 避坑速查：</strong>编号、手机号、邮编等不做加减乘除的字段一律选 <code>string</code>（防止前导零丢失）；取值固定时用 <code>enum</code> 枚举锁死；切勿把 <code>tenant_id</code> / <code>user_id</code> 放进这里，应由后端从登录态注入！
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: RESPONSE INSPECTOR & CHEATSHEET ==================== -->
+    <section class="pg-panel" id="panel-inspector">
+      <div class="pg-grid">
+        <div class="card">
+          <div class="card-title">📋 粘贴你的 API 返回 JSON（来自 Postman / PowerShell）</div>
+          <div class="field">
+            <label>把大模型接口返回的整段 JSON 粘贴到这里，右侧自动为你逐字段翻译诊断：</label>
+            <textarea id="respInput" rows="16" placeholder='{"id":"...", "choices":[...], "usage":{...}}'></textarea>
+          </div>
+          <div class="action-row">
+            <button class="btn primary" id="parseRespBtn">🔍 立即解析并翻译字段</button>
+            <button class="btn" id="loadSampleRespBtn">载入示例响应（含思考 Token 与缓存字段）</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title">🧠 自动诊断摘要</div>
+            <div id="respSummary" class="diag-box">在左侧粘贴任意返回 JSON 并点击解析，即可看到思考过程、Token 拆解、缓存命中率与停止原因诊断。</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📖 大模型响应体高频字段权威速查表</div>
+            <div class="table-wrap" style="margin:10px 0 0">
+              <table>
+                <thead><tr><th>字段路径</th><th>大白话含义与工程注意点</th></tr></thead>
+                <tbody>
+                  <tr><td><code>choices[0].finish_reason</code></td><td><strong>停止原因（极其重要！）</strong>：<code>stop</code> 正常答完；<code>tool_calls</code> 停下来等你执行工具；<code>length</code> 撞到最大输出长度被截断（此时绝不能执行半截工具参数！）；<code>content_filter</code> 触发安全审核拦截。</td></tr>
+                  <tr><td><code>message.content</code></td><td>最终展示给用户的自然语言文本；在模型发起 <code>tool_calls</code> 的那一轮通常为 <code>null</code> 或空字符串。</td></tr>
+                  <tr><td><code>message.reasoning_content</code></td><td>推理模型（如 DeepSeek R1 / Qwen / 混元）的<strong>内部思考过程</strong>。⚠️ 多轮回传历史时通常只需保留 <code>content</code> 和 <code>tool_calls</code>，不要盲目把 <code>reasoning_content</code> 拼回下轮。</td></tr>
+                  <tr><td><code>message.tool_calls[]</code></td><td>模型提议调用的工具清单（含唯一 <code>id</code>、<code>function.name</code> 和 JSON 字符串 <code>function.arguments</code>）。为空说明未触发原生工具调用。</td></tr>
+                  <tr><td><code>usage.prompt_tokens</code><br><code>usage.completion_tokens</code></td><td>本次请求的真实输入 Token（含历史+工具定义）与输出 Token（注意：输出计费包含思考 Token！）。</td></tr>
+                  <tr><td><code>reasoning_tokens</code> /<br><code>completion_thinking_tokens</code></td><td>推理模型『打草稿思考』单独消耗的 Token 数。若发现响应慢、费用高，重点看这一项占比！</td></tr>
+                  <tr><td><code>cached_tokens</code> /<br><code>prompt_cache_hit_tokens</code> /<br><code>cache_read_input_tokens</code></td><td><strong>Prompt Caching（提示词缓存命中）</strong>：多轮 Agent 重复发送相同的 System 指令和工具 Schema 时，命中缓存的部分可省 50%–90% 输入费用并大幅提速！</td></tr>
+                  <tr><td><code>credit</code> / <code>original_credit</code> / <code>quota</code></td><td>非 OpenAI 官方标准字段，属于中转站 / 聚合网关自己追加的余额与单次扣费明细。</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

@@ -100,6 +100,22 @@
       </table>
     </div>
 
+    <h3>响应体核心字段速查（<code>finish_reason</code> / <code>reasoning_content</code> / <code>usage</code>）</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>响应 JSON 字段</th><th>大白话含义与开发注意事项</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>choices[0].finish_reason</code></td><td><code>stop</code> 正常结束；<code>tool_calls</code> 等你调工具；<code>length</code> 达输出上限被截断（<strong>绝不执行半截参数</strong>）；<code>content_filter</code> 触发风控。</td></tr>
+          <tr><td><code>message.reasoning_content</code></td><td>推理模型内部思考草稿（DeepSeek R1 / Qwen / 混元等）。多轮拼历史时一般只保留 <code>content</code> 与 <code>tool_calls</code>。</td></tr>
+          <tr><td><code>usage.reasoning_tokens</code> /<br><code>completion_thinking_tokens</code></td><td>思考过程单独消耗的输出 Token（同样计入 <code>completion_tokens</code> 费用，是排查耗慢与账单高的第一观察点）。</td></tr>
+          <tr><td><code>cached_tokens</code> /<br><code>prompt_cache_hit_tokens</code> /<br><code>cache_read_input_tokens</code></td><td>提示词缓存命中数：多轮 Agent 重复发相同的 System 与工具定义时，命中缓存可大幅降本提速。</td></tr>
+          <tr><td><code>credit</code> / <code>original_credit</code> / <code>quota</code></td><td>中转站或聚合网关追加的私有计费扩展字段，非 OpenAI 标准字段，业务代码解析时不要强依赖。</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <h2>三、MCP 协议速查：JSON-RPC 2.0 信封格式与三大原语对照</h2>
     <div class="bridge-grid">
       <div class="card">
