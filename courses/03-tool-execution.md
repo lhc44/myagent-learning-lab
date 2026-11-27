@@ -167,17 +167,16 @@ resp2 = post_json(base_url, "/chat/completions", api_key, "chat", {"model": mode
 ```
 - **核心要点**：只要看懂这三段代码，你就已经亲手打通了 Function Calling 从模型到数据库再回到模型的全部任督二脉！
 
-## 动手实验：演练四层错误拦截器并走通完整两轮消息往返 (`labs/lab03_tool_execution.py`)
+## 动手实验：演练四层错误拦截器并走通真实大模型两轮消息闭环 (`labs/lab03_tool_execution.py`)
 
-1. 执行 python lab03_tool_execution.py --mock，先观察 Stage 1 五组测试输入分别落入哪一层防线（正常、invalid_json、unknown_tool、invalid_arguments、not_found）。
-2. 接着观察 Stage 2 打印出的『准备发往第 2 轮请求的完整 messages 数组（共 4 条消息）』，核对第 3 条里的 id 与第 4 条里的 tool_call_id 是否完全一致。
-3. （可选）配置真实 API 后运行 roundtrip，试试把问题改成『查一下 Z999 订单』，观察真实模型收到 not_found 后如何礼貌告知用户。
+1. 执行 python lab03_tool_execution.py，先观察 Step 1 五组固定输入分别触发哪一层防线（正常、invalid_json、unknown_tool、invalid_arguments、not_found）。
+2. 接着观察 Step 2 打印出的『准备发往第 2 轮请求的完整 messages（共 4 条）』，核对第 3 条里的 id 与第 4 条里的 tool_call_id 是否完全一致。
 
 ```bash
-python lab03_tool_execution.py --mock
+python lab03_tool_execution.py
 ```
 
-**预期观察结果**：前三种异常均在访问 SQLite 之前被精准拦截；Z999 正常访问数据库并返回 found=False；两轮往返后准确输出订单 A100 的金额与状态。
+**预期观察结果**：前三种异常均在访问 SQLite 之前被精准拦截；Z999 正常访问数据库并返回 found=False；两轮真实往返后准确输出订单 A100 的金额与状态。
 
 ## 本章权威参考资料
 - [OpenAI · Handling Function Calls & Errors](https://platform.openai.com/docs/guides/function-calling#handling-function-calls) — 官方关于 tool_call_id 配对与 finish_reason 检查的规范说明

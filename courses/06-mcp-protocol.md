@@ -189,17 +189,18 @@ for c in calls:
 ```
 - **核心要点**：业务系统以后哪怕用 Java 或 Go 重写了 MCP Server，你这边的 Python Agent 代码一行都不用改！
 
-## 动手实验：零依赖解剖 MCP JSON-RPC 双链路报文（并可选体验真实子进程联调） (`labs/lab06_mcp_bridge.py`)
+## 动手实验：启动真实 MCP 子进程，一次演练 Prompt / Resource / Tool 三大原语 + 真实大模型 (`labs/lab06_mcp_bridge.py`)
 
-1. 无需安装任何额外包，直接运行 python lab06_mcp_bridge.py --demo-protocol，逐步观察终端打印出的 5 步双链路接力报文。
-2. 对比 Step 1 中 MCP 返回的 inputSchema 与 Step 2 转换后的 parameters，以及 Step 4 的 tools/call 请求结构。
-3. （可选进阶）在独立虚拟环境执行 pip install mcp 后，运行 --discover 真实启动 lab06_mcp_server.py 子进程完成跨进程 stdio 工具发现与查询！
+1. 先安装官方 MCP SDK：python -m pip install mcp。
+2. 运行 python lab06_mcp_bridge.py，脚本会自动拉起同目录的 lab06_mcp_server.py 子进程。
+3. 依次观察 Step 1（获取 Prompt 模板）、Step 2（读取 policy://P1 Resource 原文）、Step 3（发现 query_order Tool）以及 Step 4（真实大模型通过 MCP 跨进程查订单 A100 并给出严谨结论）。
 
 ```bash
-python lab06_mcp_bridge.py --demo-protocol
+python -m pip install mcp
+python lab06_mcp_bridge.py
 ```
 
-**预期观察结果**：协议解剖模式清晰展示链路 A（JSON-RPC 2.0）与链路 B（LLM HTTP API）的 5 步完整衔接；--discover 模式成功从子进程拉取两个工具并查出订单 A100 数据。
+**预期观察结果**：三大原语与真实大模型端到端联动跑通，最终基于 policy://P1 与 A100 实时数据给出合规审核结论。
 
 ## 本章权威参考资料
 - [Model Context Protocol Official Specification](https://modelcontextprotocol.io/specification/) — MCP 官方架构、JSON-RPC 协议规范与传输层标准文档

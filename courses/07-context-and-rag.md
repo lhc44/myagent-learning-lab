@@ -123,17 +123,16 @@ def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
 ```
 - **核心要点**：不用纠结里面的平方根计算——只要记住输出 0.99 代表两句话意思高度一致，输出 0.05 代表风马牛不相及就够了！
 
-## 动手实验：动手试试：安全清理旧聊天记录 + 按意思搜出公司退款制度 (`labs/lab07_context_rag.py`)
+## 动手实验：动手试试：安全清理旧聊天记录发给真实模型 + 按意思搜出公司制度 (`labs/lab07_context_rag.py`)
 
-1. 运行 python lab07_context_rag.py，看 Step 1 是如何把 8 条长对话安全缩减为 2 条（保留开头 System 规则与最新问题，把旧的 B200 工具问答整组干净移走）。
-2. 看 Step 2：用户问『已经付钱但还没发货，怎样把钱退回来？』（字面没提『退款』二字），观察 P1《退款管理制度》是如何以 0.99+ 的高分排到第一名的。
-3. （选做）如果你配了支持 /embeddings 的接口和 AGENT_EMBEDDING_MODEL，可运行第二条命令实测真实接口。
+1. 直接运行 python lab07_context_rag.py，看 Step 1 把 8 条长对话安全裁剪后发给真实大模型，验证 100% 正常响应不报 HTTP 400。
+2. 看 Step 2：若已配置 AGENT_EMBEDDING_MODEL 环境变量，会调用真实 /embeddings 接口按相似度排制度；未单独配置向量模型时，直接展示把制度原文注入上下文后真实大模型的严谨答复。
 
 ```bash
 python lab07_context_rag.py
 ```
 
-**预期观察结果**：旧对话被整组干净清理不留残片；口语提问准确匹配到第一名 P1《退款管理制度》。
+**预期观察结果**：旧工具对话对被整组干净清理，真实大模型顺利响应且严格依据制度原文作答。
 
 ## 本章权威参考资料
 - [Anthropic · Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) — Anthropic 工程团队系统阐述智能体上下文管理、压缩与工具按需加载的权威指南

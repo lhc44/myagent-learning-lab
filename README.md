@@ -28,23 +28,24 @@
 
 ## 30 秒本地快速体验
 
-实验代码仅依赖 **Python 3.11+ 标准库**。所有脚本默认提供**零配置离线协议演示模式**（无需 API Key 即可逐步观察完整请求/响应报文流转），同时支持通过环境变量一键切换连接真实大模型 API：
+实验代码仅依赖 **Python 3.11+ 标准库**，全部采用**扁平直白的真实大模型（Live）写法**（不限制 `http://` 或 `https://`，公网 API 与内网代理均直通）：
 
 ```bash
 cd labs
 
-# 1. 运行全套自动化单元测试
-python -m unittest discover -v
+# 1. 配置你的大模型接口（支持 http:// 或 https://）
+# PowerShell 示例：
+#   $env:AGENT_BASE_URL = "http://你的地址/v1"
+#   $env:AGENT_MODEL    = "你的模型名"
+#   $env:AGENT_API_KEY  = "你的 API Key"
 
-# 2. 按步骤运行第 1 章实验（对比纯 LLM 调用 vs 传统数据库函数 vs 最小 Agent）
+# 2. 按顺序直接运行真实大模型分步实验
 python lab01_llm_vs_agent.py
-
-# 3. 观察三轮 ReAct 推理循环与跨厂商协议适配
-python lab04_agent_loop.py --mock
-
-# 4. 运行五维自动化评测集（对比合格基线与缺陷模型抓虫）
+python lab04_agent_loop.py
 python lab08_eval_harness.py
-python lab08_eval_harness.py --flawed
+
+# 3. 毫秒级运行本地确定性单元测试（不消耗额度）
+python -m unittest discover -v
 ```
 
 若需连接真实的 OpenAI、Anthropic Claude 或兼容大模型接口，请参考 [`labs/README.md`](labs/README.md) 或打开网页 [`docs/start.html`](docs/start.html) 生成本地终端环境变量命令。

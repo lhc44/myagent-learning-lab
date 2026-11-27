@@ -152,17 +152,17 @@ if first.get("action") == "query_order":
 ```
 - **核心要点**：恭喜！这短短 10 行调度逻辑，就是所有现代 AI Agent 框架最核心的骨架。
 
-## 动手实验：亲手跑通『纯 LLM vs 传统函数 vs 最小 Agent』三步对比 (`labs/lab01_llm_vs_agent.py`)
+## 动手实验：直接用真实大模型跑通『纯 LLM vs 查库 vs 最小 Agent』三步对比 (`labs/lab01_llm_vs_agent.py`)
 
-1. 进入实验目录 labs/，先不配置任何密钥，直接运行上方的离线教学命令。
-2. 在终端依次对照 [Step 1]、[Step 2]、[Step 3] 的打印输出，找到哪一行是『模型提议』，哪一行是『SQLite 真实返回』。
-3. （可选）配置好你的 API 环境变量后加上 --live 参数重跑一次，观察真实大模型在无工具与有工具两阶段下的表现差异。
+1. 先在终端设置好 AGENT_BASE_URL（支持 http 或 https）、AGENT_MODEL、AGENT_API_KEY。
+2. 进入实验目录 labs/，直接执行 python lab01_llm_vs_agent.py。
+3. 在终端依次对照 [Step 1]、[Step 2]、[Step 3] 的真实输出，找到哪一行是『模型提议的 tool_calls』，哪一行是『Python 本地查询 SQLite 的真实结果』。
 
 ```bash
 python lab01_llm_vs_agent.py
 ```
 
-**预期观察结果**：Step 1 中模型因无工具无法给出 A100 状态；Step 2 直接输出 paid/pending 字典；Step 3 通过两次模型调用加一次本地 SQLite 查询，准确输出订单 A100（299 元）已付款、待发货。
+**预期观察结果**：Step 1 中模型因无工具无法给出 A100 状态；Step 2 直接输出 paid/pending 字典；Step 3 通过两次真实大模型调用加一次本地 SQLite 查询，准确输出订单 A100（299 元）已付款、待发货。
 
 ## 本章权威参考资料
 - [Anthropic · Building Effective Agents](https://www.anthropic.com/research/building-effective-agents) — 工业界区分 Workflow 与 Agent 最权威的架构设计文章

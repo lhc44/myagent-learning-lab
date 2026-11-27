@@ -120,18 +120,17 @@ EvalCase(
 ```
 - **核心要点**：当我们在 --flawed 模式下注入一个漏查制度的模型时，这条断言会立刻亮红灯 FAIL 并指出缺失步骤！
 
-## 动手实验：对比运行合格基线评测与缺陷模型抓虫实验 (`labs/lab08_eval_harness.py`)
+## 动手实验：直接用你的真实大模型跑完 5 题自动化评测集，打出真实成绩单 (`labs/lab08_eval_harness.py`)
 
-1. 先执行 python lab08_eval_harness.py，观察 EVAL-01 至 EVAL-05 五个维度全部 PASS 时的实际工具轨迹与验收标准。
-2. 再执行 python lab08_eval_harness.py --flawed，观察当模型出现『问 Python 也调订单接口』、『没给单号瞎猜 A100』、『不查制度直接承诺秒退』三种真实通病时，评测报告如何逐一定位失败原因！
-3. 动手小挑战：试着在 build_eval_suite() 里新增第 6 条测试用例 EVAL-06（测试已发货订单 B200 申请退款时，模型能否正确指出需先办理退货入库）。
+1. 直接执行 python lab08_eval_harness.py，脚本会依次用你的真实大模型跑完 EVAL-01 至 EVAL-05 五道经典考题。
+2. 重点核对每道题的『实际调用工具轨迹』与耗时：看看你的模型在通识题有没有忍住不调工具、缺单号有没有主动追问、问退款有没有同时查订单和查制度！
+3. 动手小挑战：试着把 AGENT_MODEL 换成另一个模型重跑一遍，对比两个模型的真实得分和平均耗时！
 
 ```bash
 python lab08_eval_harness.py
-python lab08_eval_harness.py --flawed
 ```
 
-**预期观察结果**：基线模型 5/5（100%）通过；缺陷模型仅 2/5（40%）通过，EVAL-03、EVAL-04、EVAL-05 三处违规被精准捕获。
+**预期观察结果**：终端逐题打印真实轨迹、耗时和 PASS/FAIL 判定，最后输出 5 题总通过率成绩单。
 
 ## 本章权威参考资料
 - [Berkeley Function Calling Leaderboard (BFCL)](https://gorilla.cs.berkeley.edu/leaderboard.html) — 全球最权威的函数调用与多轮工具选择评估排行榜及测试集分类方法

@@ -129,15 +129,15 @@ window.TEXTBOOK_PART1 = [
     },
     practice: {
       labFile: "lab01_llm_vs_agent.py",
-      title: "亲手跑通『纯 LLM vs 传统函数 vs 最小 Agent』三步对比",
+      title: "直接用真实大模型跑通『纯 LLM vs 查库 vs 最小 Agent』三步对比",
       offlineCmd: "python lab01_llm_vs_agent.py",
-      liveCmd: "python lab01_llm_vs_agent.py --live",
+      liveCmd: "",
       steps: [
-        "进入实验目录 labs/，先不配置任何密钥，直接运行上方的离线教学命令。",
-        "在终端依次对照 [Step 1]、[Step 2]、[Step 3] 的打印输出，找到哪一行是『模型提议』，哪一行是『SQLite 真实返回』。",
-        "（可选）配置好你的 API 环境变量后加上 --live 参数重跑一次，观察真实大模型在无工具与有工具两阶段下的表现差异。"
+        "先在终端设置好 AGENT_BASE_URL（支持 http 或 https）、AGENT_MODEL、AGENT_API_KEY。",
+        "进入实验目录 labs/，直接执行 python lab01_llm_vs_agent.py。",
+        "在终端依次对照 [Step 1]、[Step 2]、[Step 3] 的真实输出，找到哪一行是『模型提议的 tool_calls』，哪一行是『Python 本地查询 SQLite 的真实结果』。"
       ],
-      expectedObservation: "Step 1 中模型因无工具无法给出 A100 状态；Step 2 直接输出 paid/pending 字典；Step 3 通过两次模型调用加一次本地 SQLite 查询，准确输出订单 A100（299 元）已付款、待发货。"
+      expectedObservation: "Step 1 中模型因无工具无法给出 A100 状态；Step 2 直接输出 paid/pending 字典；Step 3 通过两次真实大模型调用加一次本地 SQLite 查询，准确输出订单 A100（299 元）已付款、待发货。"
     },
     references: [
       ["Anthropic · Building Effective Agents", "https://www.anthropic.com/research/building-effective-agents", "工业界区分 Workflow 与 Agent 最权威的架构设计文章"],
@@ -262,15 +262,15 @@ window.TEXTBOOK_PART1 = [
     },
     practice: {
       labFile: "lab02_tool_schema.py",
-      title: "分三阶段观察 Schema 结构、有无工具报文差异与 tool_choice 约束",
-      offlineCmd: "python lab02_tool_schema.py --mock",
-      liveCmd: "python lab02_tool_schema.py compare\npython lab02_tool_schema.py choice",
+      title: "用真实大模型对比有无 tools 以及 auto vs required 的返回报文",
+      offlineCmd: "python lab02_tool_schema.py",
+      liveCmd: "",
       steps: [
-        "先运行 python lab02_tool_schema.py --mock，一次性走完 Stage 1 (schema)、Stage 2 (compare)、Stage 3 (choice) 三个教学步骤。",
-        "对比 Stage 2A 与 Stage 2B 打印出的请求正文与响应 choices[0]，确认 finish_reason 和 tool_calls 的变化。",
-        "观察 Stage 3B：当问『什么是 JSON Schema』却指定 tool_choice='required' 时，看模型是如何被逼填出一个无效订单号的。"
+        "直接执行 python lab02_tool_schema.py，依次走完 Step 1 (Schema)、Step 2 (有无工具对照) 与 Step 3 (auto vs required)。",
+        "对比 Step 2A 与 Step 2B 打印出的真实响应 choices[0]，确认 finish_reason 和 tool_calls 的变化。",
+        "观察 Step 3B：当问『用一句话解释什么是 JSON？』却指定 tool_choice='required' 时，看看真实模型是如何被迫硬凑一个工具调用的。"
       ],
-      expectedObservation: "在 auto 模式下，问 A100 会触发 query_order 调用申请，问 JSON Schema 则直接文本回答；而在 required 模式下，哪怕问技术概念也会被迫产出 tool_calls。"
+      expectedObservation: "在 auto 模式下，问 A100 会触发 query_order 调用申请，问 JSON 则直接文字回答；而在 required 模式下，哪怕问技术概念也会被迫产出 tool_calls。"
     },
     references: [
       ["OpenAI · Function Calling & Structured Outputs", "https://platform.openai.com/docs/guides/function-calling", "详解 tools、tool_choice 与 strict JSON Schema 规范"],
@@ -389,15 +389,14 @@ window.TEXTBOOK_PART1 = [
     },
     practice: {
       labFile: "lab03_tool_execution.py",
-      title: "演练四层错误拦截器并走通完整两轮消息往返",
-      offlineCmd: "python lab03_tool_execution.py --mock",
-      liveCmd: "python lab03_tool_execution.py errors\npython lab03_tool_execution.py roundtrip",
+      title: "演练四层错误拦截器并走通真实大模型两轮消息闭环",
+      offlineCmd: "python lab03_tool_execution.py",
+      liveCmd: "",
       steps: [
-        "执行 python lab03_tool_execution.py --mock，先观察 Stage 1 五组测试输入分别落入哪一层防线（正常、invalid_json、unknown_tool、invalid_arguments、not_found）。",
-        "接着观察 Stage 2 打印出的『准备发往第 2 轮请求的完整 messages 数组（共 4 条消息）』，核对第 3 条里的 id 与第 4 条里的 tool_call_id 是否完全一致。",
-        "（可选）配置真实 API 后运行 roundtrip，试试把问题改成『查一下 Z999 订单』，观察真实模型收到 not_found 后如何礼貌告知用户。"
+        "执行 python lab03_tool_execution.py，先观察 Step 1 五组固定输入分别触发哪一层防线（正常、invalid_json、unknown_tool、invalid_arguments、not_found）。",
+        "接着观察 Step 2 打印出的『准备发往第 2 轮请求的完整 messages（共 4 条）』，核对第 3 条里的 id 与第 4 条里的 tool_call_id 是否完全一致。"
       ],
-      expectedObservation: "前三种异常均在访问 SQLite 之前被精准拦截；Z999 正常访问数据库并返回 found=False；两轮往返后准确输出订单 A100 的金额与状态。"
+      expectedObservation: "前三种异常均在访问 SQLite 之前被精准拦截；Z999 正常访问数据库并返回 found=False；两轮真实往返后准确输出订单 A100 的金额与状态。"
     },
     references: [
       ["OpenAI · Handling Function Calls & Errors", "https://platform.openai.com/docs/guides/function-calling#handling-function-calls", "官方关于 tool_call_id 配对与 finish_reason 检查的规范说明"],
@@ -517,15 +516,14 @@ window.TEXTBOOK_PART1 = [
     },
     practice: {
       labFile: "lab04_agent_loop.py",
-      title: "观察三轮 ReAct 完整轨迹，并一键切换三大主流协议格式",
-      offlineCmd: "python lab04_agent_loop.py --mock\npython lab04_agent_loop.py --mock --format responses\npython lab04_agent_loop.py --mock --format messages",
-      liveCmd: "python lab04_agent_loop.py \"请查一下订单 A100，并根据公司现行制度判断能否申请退款？\"",
+      title: "运行 40 行核心 ReAct 循环，观察真实模型自动查订单与查制度",
+      offlineCmd: "python lab04_agent_loop.py",
+      liveCmd: "python lab04_agent_loop.py \"帮我看看已发货的 B200 还能直接退款吗？\"",
       steps: [
-        "依次执行上方三条 --mock 命令，观察同一个『订单 A100 能否退款』任务在 Chat Completions、Responses、Claude Messages 三种协议下是如何走完 3 轮循环的。",
-        "阅读 lab04_agent_loop.py 中的 ChatCompletionsAdapter 与 AnthropicMessagesAdapter，对比它们在 append_tool_results 时的结构差异。",
-        "（可选）接入真实大模型运行 liveCmd，观察你选用的真实模型是『分两轮依次查单和查制度』，还是『在第 1 轮就聪明地并发提出两个工具调用』！"
+        "直接运行 python lab04_agent_loop.py，观察你的真实大模型是『分两轮依次查单和查制度』，还是『在第 1 轮并发提出两个工具调用』。",
+        "再试试传入自定义问题查询已发货的 B200，看模型能否根据制度说明『已发货需先办理退货入库』。"
       ],
-      expectedObservation: "无论模型分两轮串行调用还是单轮并行调用，累计执行本地工具次数均为 2 次（query_order + read_refund_policy），最终准确指出 A100 金额 299 元满 200 元需人工审批。"
+      expectedObservation: "累计调用 query_order 与 read_refund_policy 两项工具，准确指出 A100 金额 299 元满 200 元需人工审批。"
     },
     references: [
       ["Yao et al. (ICLR 2023) · ReAct Paper", "https://arxiv.org/abs/2210.03629", "提出 Reasoning + Acting 交替推理范式的经典奠基论文"],

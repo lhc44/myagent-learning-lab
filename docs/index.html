@@ -522,10 +522,10 @@
         labCard.append(stepOl);
 
         if (p.offlineCmd) {
-          labCard.append(makeCodeBox("终端执行 · 零配置本地分步运行（在 labs/ 目录下）", p.offlineCmd, "bash"));
+          labCard.append(makeCodeBox("终端执行（进入 labs/ 目录后直接运行）", p.offlineCmd, "bash"));
         }
         if (p.liveCmd) {
-          labCard.append(makeCodeBox("可选进阶 · 连接真实大模型 API 验证", p.liveCmd, "bash"));
+          labCard.append(makeCodeBox("进阶尝试 / 更换提问", p.liveCmd, "bash"));
         }
 
         const dlRow = el("div", "", "");

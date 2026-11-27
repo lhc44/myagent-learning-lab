@@ -182,17 +182,17 @@ ORDER_TOOL_SCHEMA = {
 ```
 - **核心要点**：仔细看两点：1) finish_reason 明确告诉你它停下来等工具结果了；2) function.arguments 是一个 JSON 格式的字符串（String），下一章我们要先 json.loads 解析它！
 
-## 动手实验：分三阶段观察 Schema 结构、有无工具报文差异与 tool_choice 约束 (`labs/lab02_tool_schema.py`)
+## 动手实验：用真实大模型对比有无 tools 以及 auto vs required 的返回报文 (`labs/lab02_tool_schema.py`)
 
-1. 先运行 python lab02_tool_schema.py --mock，一次性走完 Stage 1 (schema)、Stage 2 (compare)、Stage 3 (choice) 三个教学步骤。
-2. 对比 Stage 2A 与 Stage 2B 打印出的请求正文与响应 choices[0]，确认 finish_reason 和 tool_calls 的变化。
-3. 观察 Stage 3B：当问『什么是 JSON Schema』却指定 tool_choice='required' 时，看模型是如何被逼填出一个无效订单号的。
+1. 直接执行 python lab02_tool_schema.py，依次走完 Step 1 (Schema)、Step 2 (有无工具对照) 与 Step 3 (auto vs required)。
+2. 对比 Step 2A 与 Step 2B 打印出的真实响应 choices[0]，确认 finish_reason 和 tool_calls 的变化。
+3. 观察 Step 3B：当问『用一句话解释什么是 JSON？』却指定 tool_choice='required' 时，看看真实模型是如何被迫硬凑一个工具调用的。
 
 ```bash
-python lab02_tool_schema.py --mock
+python lab02_tool_schema.py
 ```
 
-**预期观察结果**：在 auto 模式下，问 A100 会触发 query_order 调用申请，问 JSON Schema 则直接文本回答；而在 required 模式下，哪怕问技术概念也会被迫产出 tool_calls。
+**预期观察结果**：在 auto 模式下，问 A100 会触发 query_order 调用申请，问 JSON 则直接文字回答；而在 required 模式下，哪怕问技术概念也会被迫产出 tool_calls。
 
 ## 本章权威参考资料
 - [OpenAI · Function Calling & Structured Outputs](https://platform.openai.com/docs/guides/function-calling) — 详解 tools、tool_choice 与 strict JSON Schema 规范

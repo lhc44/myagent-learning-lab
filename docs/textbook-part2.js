@@ -111,15 +111,15 @@ window.TEXTBOOK_PART2 = [
     },
     practice: {
       labFile: "lab06_mcp_bridge.py",
-      title: "零依赖解剖 MCP JSON-RPC 双链路报文（并可选体验真实子进程联调）",
-      offlineCmd: "python lab06_mcp_bridge.py --demo-protocol",
-      liveCmd: "python -m pip install mcp\npython lab06_mcp_bridge.py --discover\npython lab06_mcp_bridge.py --live",
+      title: "启动真实 MCP 子进程，一次演练 Prompt / Resource / Tool 三大原语 + 真实大模型",
+      offlineCmd: "python -m pip install mcp\npython lab06_mcp_bridge.py",
+      liveCmd: "",
       steps: [
-        "无需安装任何额外包，直接运行 python lab06_mcp_bridge.py --demo-protocol，逐步观察终端打印出的 5 步双链路接力报文。",
-        "对比 Step 1 中 MCP 返回的 inputSchema 与 Step 2 转换后的 parameters，以及 Step 4 的 tools/call 请求结构。",
-        "（可选进阶）在独立虚拟环境执行 pip install mcp 后，运行 --discover 真实启动 lab06_mcp_server.py 子进程完成跨进程 stdio 工具发现与查询！"
+        "先安装官方 MCP SDK：python -m pip install mcp。",
+        "运行 python lab06_mcp_bridge.py，脚本会自动拉起同目录的 lab06_mcp_server.py 子进程。",
+        "依次观察 Step 1（获取 Prompt 模板）、Step 2（读取 policy://P1 Resource 原文）、Step 3（发现 query_order Tool）以及 Step 4（真实大模型通过 MCP 跨进程查订单 A100 并给出严谨结论）。"
       ],
-      expectedObservation: "协议解剖模式清晰展示链路 A（JSON-RPC 2.0）与链路 B（LLM HTTP API）的 5 步完整衔接；--discover 模式成功从子进程拉取两个工具并查出订单 A100 数据。"
+      expectedObservation: "三大原语与真实大模型端到端联动跑通，最终基于 policy://P1 与 A100 实时数据给出合规审核结论。"
     },
     references: [
       ["Model Context Protocol Official Specification", "https://modelcontextprotocol.io/specification/", "MCP 官方架构、JSON-RPC 协议规范与传输层标准文档"],
@@ -220,15 +220,14 @@ window.TEXTBOOK_PART2 = [
     },
     practice: {
       labFile: "lab07_context_rag.py",
-      title: "动手试试：安全清理旧聊天记录 + 按意思搜出公司退款制度",
+      title: "动手试试：安全清理旧聊天记录发给真实模型 + 按意思搜出公司制度",
       offlineCmd: "python lab07_context_rag.py",
-      liveCmd: "python lab07_context_rag.py --live-embed --question \"快递发出来多久能送到？\"",
+      liveCmd: "",
       steps: [
-        "运行 python lab07_context_rag.py，看 Step 1 是如何把 8 条长对话安全缩减为 2 条（保留开头 System 规则与最新问题，把旧的 B200 工具问答整组干净移走）。",
-        "看 Step 2：用户问『已经付钱但还没发货，怎样把钱退回来？』（字面没提『退款』二字），观察 P1《退款管理制度》是如何以 0.99+ 的高分排到第一名的。",
-        "（选做）如果你配了支持 /embeddings 的接口和 AGENT_EMBEDDING_MODEL，可运行第二条命令实测真实接口。"
+        "直接运行 python lab07_context_rag.py，看 Step 1 把 8 条长对话安全裁剪后发给真实大模型，验证 100% 正常响应不报 HTTP 400。",
+        "看 Step 2：若已配置 AGENT_EMBEDDING_MODEL 环境变量，会调用真实 /embeddings 接口按相似度排制度；未单独配置向量模型时，直接展示把制度原文注入上下文后真实大模型的严谨答复。"
       ],
-      expectedObservation: "旧对话被整组干净清理不留残片；口语提问准确匹配到第一名 P1《退款管理制度》。"
+      expectedObservation: "旧工具对话对被整组干净清理，真实大模型顺利响应且严格依据制度原文作答。"
     },
     references: [
       ["Anthropic · Effective Context Engineering for AI Agents", "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents", "Anthropic 工程团队系统阐述智能体上下文管理、压缩与工具按需加载的权威指南"],
@@ -456,15 +455,15 @@ window.TEXTBOOK_PART2 = [
     },
     practice: {
       labFile: "lab08_eval_harness.py",
-      title: "对比运行合格基线评测与缺陷模型抓虫实验",
-      offlineCmd: "python lab08_eval_harness.py\npython lab08_eval_harness.py --flawed",
+      title: "直接用你的真实大模型跑完 5 题自动化评测集，打出真实成绩单",
+      offlineCmd: "python lab08_eval_harness.py",
       liveCmd: "",
       steps: [
-        "先执行 python lab08_eval_harness.py，观察 EVAL-01 至 EVAL-05 五个维度全部 PASS 时的实际工具轨迹与验收标准。",
-        "再执行 python lab08_eval_harness.py --flawed，观察当模型出现『问 Python 也调订单接口』、『没给单号瞎猜 A100』、『不查制度直接承诺秒退』三种真实通病时，评测报告如何逐一定位失败原因！",
-        "动手小挑战：试着在 build_eval_suite() 里新增第 6 条测试用例 EVAL-06（测试已发货订单 B200 申请退款时，模型能否正确指出需先办理退货入库）。"
+        "直接执行 python lab08_eval_harness.py，脚本会依次用你的真实大模型跑完 EVAL-01 至 EVAL-05 五道经典考题。",
+        "重点核对每道题的『实际调用工具轨迹』与耗时：看看你的模型在通识题有没有忍住不调工具、缺单号有没有主动追问、问退款有没有同时查订单和查制度！",
+        "动手小挑战：试着把 AGENT_MODEL 换成另一个模型重跑一遍，对比两个模型的真实得分和平均耗时！"
       ],
-      expectedObservation: "基线模型 5/5（100%）通过；缺陷模型仅 2/5（40%）通过，EVAL-03、EVAL-04、EVAL-05 三处违规被精准捕获。"
+      expectedObservation: "终端逐题打印真实轨迹、耗时和 PASS/FAIL 判定，最后输出 5 题总通过率成绩单。"
     },
     references: [
       ["Berkeley Function Calling Leaderboard (BFCL)", "https://gorilla.cs.berkeley.edu/leaderboard.html", "全球最权威的函数调用与多轮工具选择评估排行榜及测试集分类方法"],

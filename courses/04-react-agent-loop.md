@@ -138,19 +138,16 @@ for round_no in range(1, self.max_rounds + 1):
 ```
 - **核心要点**：这就是 LangGraph、OpenAI Agents SDK、Spring AI ChatClient 内部最核心的驱动引擎——现在你每一行都能自己写出来！
 
-## 动手实验：观察三轮 ReAct 完整轨迹，并一键切换三大主流协议格式 (`labs/lab04_agent_loop.py`)
+## 动手实验：运行 40 行核心 ReAct 循环，观察真实模型自动查订单与查制度 (`labs/lab04_agent_loop.py`)
 
-1. 依次执行上方三条 --mock 命令，观察同一个『订单 A100 能否退款』任务在 Chat Completions、Responses、Claude Messages 三种协议下是如何走完 3 轮循环的。
-2. 阅读 lab04_agent_loop.py 中的 ChatCompletionsAdapter 与 AnthropicMessagesAdapter，对比它们在 append_tool_results 时的结构差异。
-3. （可选）接入真实大模型运行 liveCmd，观察你选用的真实模型是『分两轮依次查单和查制度』，还是『在第 1 轮就聪明地并发提出两个工具调用』！
+1. 直接运行 python lab04_agent_loop.py，观察你的真实大模型是『分两轮依次查单和查制度』，还是『在第 1 轮并发提出两个工具调用』。
+2. 再试试传入自定义问题查询已发货的 B200，看模型能否根据制度说明『已发货需先办理退货入库』。
 
 ```bash
-python lab04_agent_loop.py --mock
-python lab04_agent_loop.py --mock --format responses
-python lab04_agent_loop.py --mock --format messages
+python lab04_agent_loop.py
 ```
 
-**预期观察结果**：无论模型分两轮串行调用还是单轮并行调用，累计执行本地工具次数均为 2 次（query_order + read_refund_policy），最终准确指出 A100 金额 299 元满 200 元需人工审批。
+**预期观察结果**：累计调用 query_order 与 read_refund_policy 两项工具，准确指出 A100 金额 299 元满 200 元需人工审批。
 
 ## 本章权威参考资料
 - [Yao et al. (ICLR 2023) · ReAct Paper](https://arxiv.org/abs/2210.03629) — 提出 Reasoning + Acting 交替推理范式的经典奠基论文
